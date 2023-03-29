@@ -25,6 +25,7 @@ SAMME_URN = f"urn:samme:org.eclipse.esmf.samm:meta-model:{SAMM_VERSION}#referenc
 SAMMC_URN = f"urn:samm:org.eclipse.esmf.samm:characteristic:{SAMM_VERSION}#constraint"
 SAMM_URN = f"urn:samm:org.eclipse.esmf.samm:meta-model:{SAMM_VERSION}#Aspect"
 
+
 # helper method
 def assert_object_fields_value(unit, unit_fields_set: Set[Optional[str]]):
     fields_list = [

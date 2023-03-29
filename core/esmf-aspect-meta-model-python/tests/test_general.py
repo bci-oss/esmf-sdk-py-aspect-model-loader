@@ -265,7 +265,6 @@ def test_aspect_with_extending_property_with_payload_name() -> None:
 
 
 def test_find_properties_by_name() -> None:
-
     file_path = RESOURCE_PATH / "AspectWithProperties.ttl"
     aspect_loader = AspectLoader()
     aspect_loader.load_aspect_model(file_path)

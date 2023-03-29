@@ -36,7 +36,6 @@ def test_get_access_path():
 
 
 def test_get_access_path_input_property():
-
     file_path = RESOURCE_PATH / "AspectWithOperationNoOutput.ttl"
     aspect_loader = AspectLoader()
     aspect = aspect_loader.load_aspect_model(file_path)
@@ -50,7 +49,6 @@ def test_get_access_path_input_property():
 
 
 def test_find_properties_by_name() -> None:
-
     file_path = RESOURCE_PATH / "AspectWithProperties.ttl"
     aspect_loader = AspectLoader()
     aspect_loader.load_aspect_model(file_path)
