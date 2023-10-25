@@ -1,16 +1,26 @@
 [tool.poetry]
-name = "esmf-aspect-meta-model-python"
-version = "0.0.1"
-description = ""
+name = "esmf-aspect-model-loader"
+version = "0.0.3"
+description = "Load Aspect Models based on the Semantic Aspect Meta Model"
 authors = [
-    "Aghyad Farrouh <aghyad.farrouh@systecs.com>",
-    "Georg Schmidt-Dumont <georg.schmidt-dumont@de.bosch.com>",
-    "Nico Makowe <nico.makowe@de.bosch.com>",
+    "Eclipse Semantic Modeling Framework",
+    "Hanna Shalamitskaya <external.Hanna.Shalamitskaya@de.bosch.com>",
+    "Andreas Textor <Andreas.Textor@de.bosch.com> ",
+    "Georg Schmidt-Dumont <Georg.Schmidt-Dumont@de.bosch.com>",
+    "Nico Makowe",
+    "Aghyad Farrouh",
 ]
+packages = [{include = "esmf_aspect_meta_model_python"}]
 include = ["esmf_aspect_meta_model_python/samm_aspect_meta_model/samm/**/*"]
+license = "MPL-2.0"
+readme = "README.md"
+keywords = ["samm", "esmf", "digital twin", "idta", "model loader", "semantic api", "semantics", "aspect"]
+homepage = "https://projects.eclipse.org/projects/dt.esmf"
+repository = "https://github.com/bci-oss/esmf-sdk-py-aspect-model-loader"
+documentation = "https://eclipse-esmf.github.io/python-sdk-guide/index.html"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10"
 rdflib = "^6.2.0"
 requests = "^2.28.1"
 tox = "^4.5.2"
@@ -26,7 +36,6 @@ pytest = "^7.1"
 pytest-cov = "^4.0.0"
 pytest-sugar = "^0.9.7"
 types-requests = "^2.30.0.0"
-
 
 [tool.pytest.ini_options]
 cache_dir = ".pytest_cache"

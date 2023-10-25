@@ -1,3 +1,6 @@
+The aspect model loader as part of the Python SDK provided by the [*Eclipse Semantic Modeling Framework*](
+https://projects.eclipse.org/projects/dt.esmf])
+
 # Aspect Meta Model
 
 The `esmf-aspect-meta-model-python` package provides the Python implementation for the SAMM Aspect Meta Model, or SAMM.
