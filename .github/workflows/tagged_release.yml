@@ -8,7 +8,7 @@ on:
         required: true
 
 jobs:
-  check_code:
+  check-preconditions:
     name: Check if passes all requirements
     runs-on: ${{ matrix.os }}
 
@@ -49,6 +49,7 @@ jobs:
 
   create_and_publish_release:
     name: Create tagged release
+    needs: [check-preconditions]
     runs-on: ${{ matrix.os }}
 
     permissions:
