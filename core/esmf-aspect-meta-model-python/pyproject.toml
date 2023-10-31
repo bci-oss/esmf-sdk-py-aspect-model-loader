@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "esmf-aspect-meta-model-python"
-version = "0.0.2"
+version = "0.0.1"
 description = ""
 authors = [
     "Aghyad Farrouh <aghyad.farrouh@systecs.com>",
