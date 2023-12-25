@@ -153,9 +153,11 @@ jobs:
       - name: Build and publish esmf-aspect-model-loader project
         run: |
           git checkout ${{ env.release_branch_name }}
+          git status
           cd core/esmf-aspect-meta-model-python
           poetry install
           poetry run download-samm-release
           poetry build
           poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
-          poetry publish
+          poetry version
+#          poetry publish
