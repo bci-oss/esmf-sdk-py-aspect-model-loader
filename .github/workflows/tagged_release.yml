@@ -158,6 +158,6 @@ jobs:
           poetry install
           poetry run download-samm-release
           poetry build
-          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
+#          poetry config pypi-token.pypi ${{ secrets.PYPI_TOKEN }}
           poetry version
 #          poetry publish
