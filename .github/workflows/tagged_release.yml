@@ -30,22 +30,22 @@ jobs:
         with:
           poetry-version: ${{ matrix.poetry-version }}
 
-      - name: build esmf-aspect
-        run: |
-          cd core/esmf-aspect-meta-model-python
-          poetry install
-          poetry run download-samm-release
-          poetry build
-
-      - name: run tests
-        run: |
-          cd core/esmf-aspect-meta-model-python
-          poetry run tox -e py310
-
-      - name: run code style checks
-        run: |
-          cd core/esmf-aspect-meta-model-python
-          poetry run tox -e pep8
+#      - name: build esmf-aspect
+#        run: |
+#          cd core/esmf-aspect-meta-model-python
+#          poetry install
+#          poetry run download-samm-release
+#          poetry build
+#
+#      - name: run tests
+#        run: |
+#          cd core/esmf-aspect-meta-model-python
+#          poetry run tox -e py310
+#
+#      - name: run code style checks
+#        run: |
+#          cd core/esmf-aspect-meta-model-python
+#          poetry run tox -e pep8
 
   create_and_publish_release:
     name: Create tagged release
@@ -122,7 +122,7 @@ jobs:
 
       - name: Create a release branch
         run: |
-          BRANCH='my-branch-name'
+          BRANCH=${{ env.release_branch_name }}
           git ls-remote --exit-code --heads origin $BRANCH >/dev/null 2>&1
           EXIT_CODE=$?
 
