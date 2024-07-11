@@ -17,4 +17,5 @@ from esmf_aspect_meta_model_python.base.base import Base
 class QuantityKind(Base, ABC):
     """QuantityKind interface class.
 
-    A quantity kind is a physical property of an object or a system, e.g. length, diameter, volume or voltage."""
+    A quantity kind is a physical property of an object or a system, e.g. length, diameter, volume or voltage.
+    """
