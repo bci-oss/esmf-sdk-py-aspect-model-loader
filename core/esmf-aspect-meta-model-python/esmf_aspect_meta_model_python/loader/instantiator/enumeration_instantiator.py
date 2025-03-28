@@ -55,7 +55,7 @@ class EnumerationInstantiator(InstantiatorBase[Enumeration]):
             # value represents a simple data type
             value = value_node.toPython()
 
-        elif isinstance(value_node, rdflib.URIRef):
+        elif isinstance(value_node, rdflib.URIRef) or isinstance(value_node, rdflib.term.BNode):
             # value represents a complex data type
             value_node_properties = self._aspect_graph.predicate_objects(value_node)
             for property_urn, property_value in value_node_properties:
@@ -66,19 +66,26 @@ class EnumerationInstantiator(InstantiatorBase[Enumeration]):
                         actual_value = self.__instantiate_enum_collection(property_value)
                     else:
                         actual_value = self.__to_enum_node_value(property_value)
-                    value[property_name] = actual_value
 
-            value_node_name = value_node.split("#")[1]
-            value_key = self._samm.get_urn(SAMM.name).toPython()
-            value[value_key] = value_node_name  # type: ignore
+                    if property_name == "see":
+                        value.setdefault(property_name, []).append(actual_value)
+                    else:
+                        value[property_name] = actual_value
 
-        else:
-            if not isinstance(value_node, rdflib.term.BNode) or value_node == rdflib.namespace.RDF.nil:
-                # illegal node type for enumeration value (e.g., Blank Node)
-                raise TypeError(
-                    f"Every value of an enumeration must either be a Literal (string, int, etc.) or "
-                    f"a URI reference to a ComplexType. Values of type {type(value_node).__name__} are not allowed"
-                )
+            if isinstance(value_node, rdflib.URIRef):
+                if value_node.find("#") == -1:
+                    value = value_node.toPython()
+                else:
+                    value_node_name = value_node.split("#")[1]
+                    value_key = self._samm.get_urn(SAMM.name).toPython()
+                    value[value_key] = value_node_name  # type: ignore
+
+        elif value_node == rdflib.namespace.RDF.nil:
+            # illegal node type for enumeration value (e.g., Blank Node)
+            raise TypeError(
+                f"Every value of an enumeration must either be a Literal (string, int, etc.) or "
+                f"a URI reference to a ComplexType. Values of type {type(value_node).__name__} are not allowed"
+            )
 
         return value
 

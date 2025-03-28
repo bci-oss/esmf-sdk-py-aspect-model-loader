@@ -13,8 +13,8 @@ from os.path import join
 from string import Template
 
 
-SAMM_VERSION = "2.1.0"
-JAVA_CLI_VERSION = "2.7.0"
+SAMM_VERSION = "2.2.0"
+JAVA_CLI_VERSION = "2.10.1"
 
 
 class SAMMCliConstants:

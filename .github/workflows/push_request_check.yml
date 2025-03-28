@@ -37,6 +37,11 @@ jobs:
           poetry run download-samm-release
           poetry build
 
+      - name: download test aspect models
+        run: |
+          cd core/esmf-aspect-meta-model-python
+          poetry run download-test-aspect-models
+
       - name: run tests
         run: |
           cd core/esmf-aspect-meta-model-python
