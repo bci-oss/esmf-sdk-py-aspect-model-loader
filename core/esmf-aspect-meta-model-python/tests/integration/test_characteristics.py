@@ -88,7 +88,7 @@ def test_loading_aspect_with_list():
 
 
 def test_loading_aspect_with_collection_with_element_characteristic():
-    file_path = RESOURCE_PATH / "AspectWithCollectionWithElementCharacteristic.ttl"
+    file_path = RESOURCE_PATH / "AspectWithElementCharacteristic.ttl"
     samm_graph = SAMMGraph()
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
