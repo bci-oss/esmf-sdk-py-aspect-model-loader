@@ -27,7 +27,7 @@ from esmf_aspect_meta_model_python import (
     Trait,
 )
 
-RESOURCE_PATH = getcwd() / Path("tests/integration/resources/org.eclipse.esmf.test.constraints/2.1.0")
+RESOURCE_PATH = getcwd() / Path("tests/integration/resources/org.eclipse.esmf.test.constraints/2.2.0")
 
 
 def test_loading_aspect_with_constrained_collection():
@@ -165,7 +165,7 @@ def test_loading_aspect_with_range_constraint_incl_bound_definition():
     assert isinstance(base_characteristic, Quantifiable)
     assert hasattr(base_characteristic, "unit")
     assert hasattr(base_characteristic.unit, "urn")
-    assert base_characteristic.unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.1.0#metrePerSecond"
+    assert base_characteristic.unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.2.0#metrePerSecond"
 
 
 def test_loading_aspect_with_language_constraint():

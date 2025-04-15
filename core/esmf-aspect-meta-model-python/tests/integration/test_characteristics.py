@@ -25,7 +25,7 @@ from esmf_aspect_meta_model_python import (
     StructuredValue,
 )
 
-RESOURCE_PATH = getcwd() / Path("tests/integration/resources/org.eclipse.esmf.test.characteristics/2.1.0")
+RESOURCE_PATH = getcwd() / Path("tests/integration/resources/org.eclipse.esmf.test.characteristics/2.2.0")
 
 
 def test_loading_aspect_with_collection():
@@ -45,7 +45,7 @@ def test_loading_aspect_with_collection():
     assert aspect_property.get_preferred_name("en") == "Test Property"
     assert aspect_property.get_description("en") == "This is a test property."
     assert sorted(aspect_property.see) == ["http://example.com/", "http://example.com/me"]
-    assert aspect_property.urn == "urn:samm:org.eclipse.esmf.test.characteristics:2.1.0#testProperty"
+    assert aspect_property.urn == "urn:samm:org.eclipse.esmf.test.characteristics:2.2.0#testProperty"
     assert aspect_property.example_value == rdflib.Literal("Example Value")
 
     characteristic = aspect_property.characteristic
@@ -101,10 +101,10 @@ def test_loading_aspect_with_collection_with_element_characteristic():
     assert data_type.urn == "http://www.w3.org/2001/XMLSchema#string"
 
     element_characteristic = collection_characteristic.element_characteristic
-    assert element_characteristic.urn == "urn:samm:org.eclipse.esmf.samm:characteristic:2.1.0#Text"
+    assert element_characteristic.urn == "urn:samm:org.eclipse.esmf.samm:characteristic:2.2.0#Text"
 
     assert element_characteristic.parent_elements[0].urn == (
-        "urn:samm:org.eclipse.esmf.test.characteristics:2.1.0#TestCollection"
+        "urn:samm:org.eclipse.esmf.test.characteristics:2.2.0#TestCollection"
     )
 
 
@@ -160,7 +160,7 @@ def test_loading_aspect_with_quantifiable():
     assert isinstance(quantifiable_characteristic, Quantifiable)
     unit = quantifiable_characteristic.unit
     assert unit is not None
-    assert unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.1.0#hertz"
+    assert unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.2.0#hertz"
     assert unit.symbol == "Hz"
     assert unit.code == "HTZ"
     assert unit.reference_unit is None
@@ -168,7 +168,7 @@ def test_loading_aspect_with_quantifiable():
     assert len(unit.quantity_kinds) == 1
     for quantity_kind in unit.quantity_kinds:
         assert quantity_kind.name == "frequency"
-    assert unit.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.characteristics:2.1.0#TestQuantifiable"
+    assert unit.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.characteristics:2.2.0#TestQuantifiable"
 
 
 def test_loading_aspect_with_duration():
@@ -182,7 +182,7 @@ def test_loading_aspect_with_duration():
     assert isinstance(duration_characteristic, Duration)
     assert duration_characteristic.name == "TestDuration"
 
-    assert duration_characteristic.unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.1.0#kilosecond"
+    assert duration_characteristic.unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.2.0#kilosecond"
 
 
 def test_loading_aspect_with_measurement():
@@ -196,7 +196,7 @@ def test_loading_aspect_with_measurement():
     assert isinstance(measurement_characteristic, Measurement)
     assert measurement_characteristic.name == "TestMeasurement"
 
-    assert measurement_characteristic.unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.1.0#kelvin"
+    assert measurement_characteristic.unit.urn == "urn:samm:org.eclipse.esmf.samm:unit:2.2.0#kelvin"
 
 
 def test_loading_aspect_with_structured_value():

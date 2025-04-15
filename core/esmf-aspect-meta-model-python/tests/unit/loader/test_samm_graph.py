@@ -62,13 +62,13 @@ class TestSAMMGraph:
     def test_get_samm_version_from_rdf_graph(self):
         graph_mock = mock.MagicMock(name="rdf_graph")
         graph_mock.namespace_manager.namespaces.return_value = [
-            ("samm", "urn:samm:org.eclipse.esmf.samm:meta-model:2.1.0#"),
+            ("samm", "urn:samm:org.eclipse.esmf.samm:meta-model:2.2.0#"),
         ]
         samm_graph = SAMMGraph()
         samm_graph.rdf_graph = graph_mock
         result = samm_graph._get_samm_version_from_rdf_graph()
 
-        assert result == "2.1.0"
+        assert result == "2.2.0"
 
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph._get_samm_version_from_rdf_graph")
     def test_get_samm_version(self, get_samm_version_from_rdf_graph_mock):

@@ -1,4 +1,4 @@
-""" In compiled programming languages like Java or C++ the inheritances of classes are determined during
+"""In compiled programming languages like Java or C++ the inheritances of classes are determined during
 compile time. If one wants to check whether a given instance is of a certain type,
 the visitor pattern is often the right choice.
 

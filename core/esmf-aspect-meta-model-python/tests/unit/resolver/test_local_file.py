@@ -48,7 +48,7 @@ class TestLocalFileResolver:
 
     def test_parse_namespace_no_data(self):
         resolver = LocalFileResolver()
-        result = resolver._parse_namespace("urn:samm:org.eclipse.esmf.samm:2.1.0#")
+        result = resolver._parse_namespace("urn:samm:org.eclipse.esmf.samm:2.2.0#")
 
         assert len(result) == 2
         namespace_specific_str, version = result
