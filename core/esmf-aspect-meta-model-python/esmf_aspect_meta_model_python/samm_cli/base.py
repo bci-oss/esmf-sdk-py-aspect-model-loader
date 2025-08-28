@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from esmf_aspect_meta_model_python.samm_cli.constants import SAMMCLICommands, SAMMCLICommandTypes
-from scripts.download_samm_cli import download_samm_cli
+from esmf_aspect_meta_model_python.samm_cli.download import download_samm_cli
 
 
 class SammCli:
@@ -33,7 +33,7 @@ class SammCli:
     def _get_client_path():
         """Get path to the SAMM CLI executable file."""
         base_path = Path(__file__).resolve()
-        cli_path = join(base_path.parents[2], "samm-cli", "samm.exe")
+        cli_path = join(base_path.parents[0], "samm-cli", "samm.exe")
 
         return cli_path
 

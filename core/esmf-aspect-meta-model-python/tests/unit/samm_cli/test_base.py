@@ -43,7 +43,7 @@ def test_init(get_client_path_mock, validate_client_mock):
 @mock.patch(f"{CLASS_PATH}._validate_client")
 def test_get_client_path(_, path_mock, join_mock):
     base_path_mock = mock.MagicMock(name="base_path")
-    base_path_mock.parents = ["parent_0", "parent_1", "parent_2"]
+    base_path_mock.parents = ["parent", "parent_1", "parent_2"]
     path_mock.return_value = path_mock
     path_mock.resolve.return_value = base_path_mock
     join_mock.return_value = "cli_path"
@@ -53,7 +53,7 @@ def test_get_client_path(_, path_mock, join_mock):
 
     assert result == "cli_path"
     path_mock.resolve.assert_called_once()
-    join_mock.assert_called_once_with("parent_2", "samm-cli", "samm.exe")
+    join_mock.assert_called_once_with("parent", "samm-cli", "samm.exe")
 
 
 @mock.patch(f"{BASE_PATH}.download_samm_cli")

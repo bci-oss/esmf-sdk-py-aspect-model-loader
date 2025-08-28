@@ -10,6 +10,18 @@
 #   SPDX-License-Identifier: MPL-2.0
 """Constants for SAMM CLI commands and types."""
 
+from string import Template
+
+from esmf_aspect_meta_model_python.constants import JAVA_CLI_VERSION, SAMM_VERSION
+
+
+class SAMMCliConstants:
+    BASE_PATH = Template("https://github.com/eclipse-esmf/esmf-sdk/releases/download/v$version_number/$file_name")
+    JAVA_CLI_VERSION = JAVA_CLI_VERSION
+    LINUX_FILE_NAME = Template("samm-cli-$version_number-linux-x86_64.tar.gz")
+    SAMM_VERSION = SAMM_VERSION
+    WIN_FILE_NAME = Template("samm-cli-$version_number-windows-x86_64.zip")
+
 
 class SAMMCLICommands:
     """SAMM CLI command names."""
