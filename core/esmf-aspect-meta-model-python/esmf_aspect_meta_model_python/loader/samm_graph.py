@@ -213,11 +213,40 @@ class SAMMGraph:
 
             graph = self.rdf_graph + self.samm_graph
             self._reader.prepare_aspect_model(graph)
+            self._validate_samm_namespace_version(graph)
 
             model_element_factory = ModelElementFactory(self.samm_version, graph, self._cache)
             self.aspect = model_element_factory.create_element(aspect_urn)
 
         return self.aspect
+
+    def _validate_samm_namespace_version(self, graph: Graph) -> None:
+        """
+        Validates that the SAMM version in the given RDF graph matches the detected SAMM version.
+
+        This method iterates through the namespaces in the RDF graph and checks if any namespace
+        corresponds to the SAMM namespace prefix. If a SAMM namespace is found, it extracts the version
+        from the namespace and compares it to the `samm_version` attribute of the class. If the versions
+        do not match, a `ValueError` is raised.
+
+        Args:
+            graph (Graph): The RDF graph whose namespaces are to be validated.
+
+        Raises:
+            ValueError: If the SAMM version in the graph's namespace does not match the detected SAMM version.
+        """
+        for prefix, namespace in graph.namespace_manager.namespaces():
+            if prefix.startswith(self.samm_namespace_prefix):
+                namespace_info = namespace.split(":")  # [urn, namespace_id, namespace_specific_str, entity, version#]
+
+                if len(namespace_info) == 5 and namespace_info[2] == "org.eclipse.esmf.samm":
+                    version = namespace_info[-1].replace("#", "")
+
+                    if version != self.samm_version:
+                        raise ValueError(
+                            f"SAMM version mismatch. Found '{version}', but expected '{self.samm_version}'. "
+                            "Ensure all RDF files use a single, consistent SAMM version"
+                        )
 
     def _get_aspect_from_elements(self):
         """Geta and save the Aspect element from the model elements."""

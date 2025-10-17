@@ -216,7 +216,10 @@ class TestSAMMGraph:
 
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.ModelElementFactory")
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph.get_aspect_urn")
-    def test_load_aspect_model_create_element(self, get_aspect_urn_mock, model_element_factory_mock):
+    @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph._validate_samm_namespace_version")
+    def test_load_aspect_model_create_element(
+        self, validate_samm_namespace_version_mock, get_aspect_urn_mock, model_element_factory_mock
+    ):
         reader_mock = mock.MagicMock(name="reader")
         cache_mock = mock.MagicMock(name="cache")
         samm_graph = SAMMGraph()
@@ -229,6 +232,7 @@ class TestSAMMGraph:
         get_aspect_urn_mock.return_value = "aspect_urn"
         model_element_factory_mock.return_value = model_element_factory_mock
         model_element_factory_mock.create_element.return_value = "aspect"
+
         result = samm_graph.load_aspect_model()
 
         assert result == "aspect"
@@ -236,6 +240,45 @@ class TestSAMMGraph:
         reader_mock.prepare_aspect_model.assert_called_once_with("rdf_graph_samm_graph")
         model_element_factory_mock.assert_called_once_with("1.2.3", "rdf_graph_samm_graph", cache_mock)
         model_element_factory_mock.create_element.assert_called_once_with("aspect_urn")
+        validate_samm_namespace_version_mock.assert_called_once_with("rdf_graph_samm_graph")
+
+    class TestValidateSammNamespaceVersion:
+        """Test suite for SAMMGraph._validate_samm_namespace_version method."""
+
+        def test_valid_version(self):
+            version = "1.2.3"
+            samm_graph = SAMMGraph()
+            samm_graph.samm_version = version
+            graph = mock.MagicMock(name="rdf_graph")
+            graph.namespace_manager.namespaces.return_value = [
+                ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+                ("samm", f"urn:samm:org.eclipse.esmf.samm:meta-model:{version}#"),  # True
+                ("samm1", f"urn:samm:org.eclipse.esmf.samm:{version}#"),
+                ("samm-e1", f"urn:samm:org.eclipse.esmf.samm:entity:{version}#"),  # True
+                ("samm-c1", "urn:samm:org.china.zes.samm:extension:1.1.1#"),
+            ]
+
+            # Should not raise an exception
+            samm_graph._validate_samm_namespace_version(graph)
+
+        def test_version_mismatch(self):
+            samm_version = "2.2.0"
+            earlier_version = "2.1.0"
+            samm_graph = SAMMGraph()
+            samm_graph.samm_version = samm_version
+            graph = mock.MagicMock(name="rdf_graph")
+            graph.namespace_manager.namespaces.return_value = [
+                ("rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#"),
+                ("samm", f"urn:samm:org.eclipse.esmf.samm:meta-model:{samm_version}#"),
+                ("samm-e1", f"urn:samm:org.eclipse.esmf.samm:extension:{earlier_version}#"),  # Exception
+            ]
+
+            with pytest.raises(
+                ValueError,
+                match=f"SAMM version mismatch. Found '{earlier_version}', but expected '{samm_version}'. "
+                "Ensure all RDF files use a single, consistent SAMM version",
+            ):
+                samm_graph._validate_samm_namespace_version(graph)
 
     def test_load_model_elements(self):
         samm_graph = SAMMGraph()
