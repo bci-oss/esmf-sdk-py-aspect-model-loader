@@ -1,3 +1,13 @@
+#  Copyright (c) 2023 Robert Bosch Manufacturing Solutions GmbH
+#
+#  See the AUTHORS file(s) distributed with this work for additional
+#  information regarding authorship.
+#
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+#   SPDX-License-Identifier: MPL-2.0
 """Integration tests for SAMM CLI functions."""
 
 import json
@@ -11,7 +21,7 @@ import pytest
 
 from esmf_aspect_meta_model_python.samm_cli.base import SammCli
 
-RESOURCE_PATH = os.getcwd() / Path("tests/integration/resources/org.eclipse.esmf.test.general/2.1.0")
+RESOURCE_PATH = Path(__file__).parent / "resources" / "org.eclipse.esmf.test.general" / "2.1.0"
 
 
 @pytest.fixture(scope="module")
@@ -41,18 +51,29 @@ def samm_cli():
 class TestSammCliIntegration:
     """Integration tests for SAMM CLI transformations."""
 
-    def test_prettyprint(self, samm_cli, file_path, temp_output_dir):
-        """Test pretty-printing the model."""
-        output_file = os.path.join(temp_output_dir, "prettyprinted.ttl")
+    class TestPrettyPrint:
+        """Test pretty-printing functionality."""
 
-        samm_cli.prettyprint(file_path, output=output_file)
+        def test_file_output(self, samm_cli, file_path, temp_output_dir):
+            """Test pretty-printing to a file."""
+            output_file = os.path.join(temp_output_dir, "prettyprinted.ttl")
 
-        assert os.path.exists(output_file)
-        assert os.path.getsize(output_file) > 0
-        with open(output_file, "r") as f:
-            content = f.read()
-            assert "@prefix" in content
-            assert ":SampleAspect" in content
+            samm_cli.prettyprint(file_path, output=output_file)
+
+            assert os.path.exists(output_file)
+            assert os.path.getsize(output_file) > 0
+            with open(output_file, "r") as f:
+                content = f.read()
+                assert "@prefix" in content
+                assert ":SampleAspect" in content
+
+        def test_capture_output(self, samm_cli, file_path):
+            """Test pretty-printing with captured output."""
+            prettyprinted_content = samm_cli.prettyprint(file_path, capture=True)
+
+            assert isinstance(prettyprinted_content, str)
+            assert "@prefix" in prettyprinted_content
+            assert ":SampleAspect" in prettyprinted_content
 
     def test_to_json(self, samm_cli, file_path, temp_output_dir):
         """Test generating example JSON payload."""

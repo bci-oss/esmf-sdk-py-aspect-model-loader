@@ -1,13 +1,14 @@
 """Download SAMM CLI.
 
-Windows: https://github.com/eclipse-esmf/esmf-sdk/releases/download/v2.10.2/samm-cli-2.10.2-windows-x86_64.zip
-  Linux: https://github.com/eclipse-esmf/esmf-sdk/releases/download/v2.10.2/samm-cli-2.10.2-linux-x86_64.tar.gz
-    JAR: https://github.com/eclipse-esmf/esmf-sdk/releases/download/v2.10.2/samm-cli-2.10.2.jar
+Windows: https://github.com/eclipse-esmf/esmf-sdk/releases/download/v2.11.1/samm-cli-2.11.1-windows-x86_64.zip
+  Linux: https://github.com/eclipse-esmf/esmf-sdk/releases/download/v2.11.1/samm-cli-2.11.1-linux-x86_64.tar.gz
+    JAR: https://github.com/eclipse-esmf/esmf-sdk/releases/download/v2.11.1/samm-cli-2.11.1.jar
 """
 
 import os
 import platform
 import sys
+import tarfile
 import zipfile
 
 from pathlib import Path
@@ -24,6 +25,8 @@ def get_samm_cli_file_name():
         file_name = Const.WIN_FILE_NAME.substitute(version_number=Const.JAVA_CLI_VERSION)
     elif platform.system() == "Linux":
         file_name = Const.LINUX_FILE_NAME.substitute(version_number=Const.JAVA_CLI_VERSION)
+    elif platform.system() == "Darwin":  # macOS
+        file_name = Const.MAC_FILE_NAME.substitute(version_number=Const.JAVA_CLI_VERSION)
     else:
         raise NotImplementedError(
             f"Please download a SAMM CLI manually for your operation system from '{Const.BASE_PATH}'"
@@ -37,6 +40,8 @@ def download_archive_file(url, archive_file):
     with open(archive_file, "wb") as f:
         print("Downloading %s" % archive_file)
         response = requests.get(url, allow_redirects=True, stream=True)
+        response.raise_for_status()  # Fail fast if HTTP error
+
         content_len = response.headers.get("content-length")
 
         if content_len is None:
@@ -57,6 +62,18 @@ def download_archive_file(url, archive_file):
                 sys.stdout.flush()
 
 
+def extract_archive(archive_file, dest_dir):
+    """Extract archive depending on its file type."""
+    if archive_file.endswith(".zip"):
+        with zipfile.ZipFile(archive_file) as archive:
+            archive.extractall(dest_dir)
+    elif archive_file.endswith((".tar.gz", ".tgz")):
+        with tarfile.open(archive_file, mode="r:gz") as archive:
+            archive.extractall(dest_dir)
+    else:
+        raise ValueError(f"Unsupported archive format: {archive_file}")
+
+
 def download_samm_cli():
     try:
         samm_cli_file_name = get_samm_cli_file_name()
@@ -72,11 +89,7 @@ def download_samm_cli():
         print("\nSAMM CLI archive file downloaded")
 
         print("Start extracting files")
-        archive = zipfile.ZipFile(archive_file)
-        extracted_files_path = os.path.join(dir_path, "samm-cli")
-        for file in archive.namelist():
-            archive.extract(file, extracted_files_path)
-        archive.close()
+        extract_archive(archive_file, dest_dir=os.path.join(dir_path, "samm-cli"))
         print("Done extracting files")
 
         print("Deleting SAMM CLI archive file")

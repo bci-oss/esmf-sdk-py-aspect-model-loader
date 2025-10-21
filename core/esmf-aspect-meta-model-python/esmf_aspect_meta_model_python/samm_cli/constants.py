@@ -16,11 +16,14 @@ from esmf_aspect_meta_model_python.constants import JAVA_CLI_VERSION, SAMM_VERSI
 
 
 class SAMMCliConstants:
-    BASE_PATH = Template("https://github.com/eclipse-esmf/esmf-sdk/releases/download/v$version_number/$file_name")
-    JAVA_CLI_VERSION = JAVA_CLI_VERSION
-    LINUX_FILE_NAME = Template("samm-cli-$version_number-linux-x86_64.tar.gz")
     SAMM_VERSION = SAMM_VERSION
+    JAVA_CLI_VERSION = JAVA_CLI_VERSION
+
+    BASE_PATH = Template("https://github.com/eclipse-esmf/esmf-sdk/releases/download/v$version_number/$file_name")
+
     WIN_FILE_NAME = Template("samm-cli-$version_number-windows-x86_64.zip")
+    LINUX_FILE_NAME = Template("samm-cli-$version_number-linux-x86_64.tar.gz")
+    MAC_FILE_NAME = Template("samm-cli-$version_number-macos-x86_64.tar.gz")
 
 
 class SAMMCLICommands:
