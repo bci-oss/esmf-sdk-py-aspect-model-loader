@@ -14,6 +14,8 @@ from typing import List, Optional, Union
 
 from rdflib import RDF, Graph, Node
 
+from esmf_aspect_meta_model_python import utils
+from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
 from esmf_aspect_meta_model_python.base.aspect import Aspect
 from esmf_aspect_meta_model_python.base.base import Base
 from esmf_aspect_meta_model_python.base.property import Property
@@ -28,10 +30,8 @@ from esmf_aspect_meta_model_python.vocabulary.samm import SAMM
 class SAMMGraph:
     """Class representing the SAMM graph and its operations."""
 
-    samm_namespace_prefix = "samm"
-
     def __init__(self):
-        self.rdf_graph = Graph()
+        self.rdf_graph = AdaptiveGraph()
         self.samm_graph = Graph()
         self._cache = DefaultElementCache()
 
@@ -59,7 +59,7 @@ class SAMMGraph:
         """Read the RDF graph from the given input data.
 
         This method initializes the `InputHandler` with the provided input data and type,
-        retrieves the reader, and reads the RDF graph into `self.rdf_graph`.
+        retrieves the reader, sets the SAMM version, and reads the RDF graph into `self.rdf_graph`.
 
         Args:
             input_data (Union[str, Path]): The input data to read the RDF graph from. This can be a file path or a str.
@@ -69,25 +69,8 @@ class SAMMGraph:
             None
         """
         self._reader = InputHandler(input_data, input_type).get_reader()
+        self._reader.set_samm_version(input_data)
         self.rdf_graph = self._reader.read(input_data)
-
-    def _get_samm_version_from_rdf_graph(self) -> str:
-        """Extracts the SAMM version from the RDF graph.
-
-        This method searches through the RDF graph namespaces to find a prefix that indicates the SAMM version.
-
-        Returns:
-            str: The SAMM version as a string extracted from the graph. Returns an empty string if no version
-                 can be conclusively identified.
-        """
-        version = ""
-
-        for prefix, namespace in self.rdf_graph.namespace_manager.namespaces():
-            if prefix == self.samm_namespace_prefix:
-                urn_parts = namespace.split(":")
-                version = urn_parts[-1].replace("#", "")
-
-        return version
 
     def _get_samm_version(self):
         """Retrieve and set the SAMM version from the RDF graph.
@@ -98,7 +81,7 @@ class SAMMGraph:
         Raises:
             ValueError: If the SAMM version is not found in the RDF graph.
         """
-        self.samm_version = self._get_samm_version_from_rdf_graph()
+        self.samm_version = self._reader.samm_version
 
         if not self.samm_version:
             raise ValueError(
@@ -220,33 +203,22 @@ class SAMMGraph:
 
         return self.aspect
 
-    def _validate_samm_namespace_version(self, graph: Graph) -> None:
+    def _validate_samm_namespace_version(self, graph: AdaptiveGraph) -> None:
         """
-        Validates that the SAMM version in the given RDF graph matches the detected SAMM version.
-
-        This method iterates through the namespaces in the RDF graph and checks if any namespace
-        corresponds to the SAMM namespace prefix. If a SAMM namespace is found, it extracts the version
-        from the namespace and compares it to the `samm_version` attribute of the class. If the versions
-        do not match, a `ValueError` is raised.
+        Validate that the SAMM version in the graph's namespace matches the detected SAMM version.
 
         Args:
-            graph (Graph): The RDF graph whose namespaces are to be validated.
+            graph: The RDF graph whose namespaces are to be validated.
 
         Raises:
             ValueError: If the SAMM version in the graph's namespace does not match the detected SAMM version.
         """
-        for prefix, namespace in graph.namespace_manager.namespaces():
-            if prefix.startswith(self.samm_namespace_prefix):
-                namespace_info = namespace.split(":")  # [urn, namespace_id, namespace_specific_str, entity, version#]
-
-                if len(namespace_info) == 5 and namespace_info[2] == "org.eclipse.esmf.samm":
-                    version = namespace_info[-1].replace("#", "")
-
-                    if version != self.samm_version:
-                        raise ValueError(
-                            f"SAMM version mismatch. Found '{version}', but expected '{self.samm_version}'. "
-                            "Ensure all RDF files use a single, consistent SAMM version"
-                        )
+        for version in utils.get_samm_versions_from_graph(graph):
+            if version != self.samm_version:
+                raise ValueError(
+                    f"SAMM version mismatch. Found '{version}', but expected '{self.samm_version}'. "
+                    "Ensure all RDF files use a single, consistent SAMM version"
+                )
 
     def _get_aspect_from_elements(self):
         """Geta and save the Aspect element from the model elements."""

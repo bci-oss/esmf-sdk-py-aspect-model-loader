@@ -1,4 +1,5 @@
 """Local file resolver test suit."""
+import pathlib
 
 from unittest import mock
 
@@ -34,17 +35,20 @@ class TestLocalFileResolver:
         assert str(error.value) == "Could not find a file file_path"
         exists_mock.assert_called_once_with("file_path")
 
-    @mock.patch("esmf_aspect_meta_model_python.resolver.local_file.Graph")
+    @mock.patch("esmf_aspect_meta_model_python.resolver.local_file.AdaptiveGraph")
     @mock.patch("esmf_aspect_meta_model_python.resolver.local_file.LocalFileResolver.validate_file")
     def test_read(self, validate_file_mock, graph_mock):
         rdf_graph_mock = mock.MagicMock(name="rdf_graph")
         graph_mock.return_value = rdf_graph_mock
         resolver = LocalFileResolver()
+        resolver.samm_version = "1.0.0"
+
         result = resolver.read("file_path")
 
         assert result == rdf_graph_mock
         validate_file_mock.assert_called_once_with("file_path")
-        rdf_graph_mock.parse.assert_called_once_with("file_path")
+        graph_mock.assert_called_once_with(samm_version="1.0.0")
+        rdf_graph_mock.parse.assert_called_once_with(source="file_path")
 
     def test_parse_namespace_no_data(self):
         resolver = LocalFileResolver()
@@ -94,7 +98,7 @@ class TestLocalFileResolver:
         result = resolver._get_dependency_folders("file_path")
 
         assert result == "dependency_folders"
-        graph_mock.parse.assert_called_once_with("file_path", format="turtle")
+        graph_mock.parse.assert_called_once_with(source="file_path", format="turtle")
         get_dirs_for_advanced_loading_mock.assert_called_once_with("file_path")
 
     @mock.patch("esmf_aspect_meta_model_python.resolver.local_file.exists")
@@ -166,3 +170,12 @@ class TestLocalFileResolver:
 
         assert result is None
         get_dependency_files_mock.assert_called_once_with({}, {}, "aspect_file_path")
+
+    @mock.patch("esmf_aspect_meta_model_python.resolver.base.ResolverInterface.set_samm_version")
+    @pytest.mark.parametrize("file_path", ["/valid/path/to/file.ttl", pathlib.Path("/valid/path/to/file.ttl")])
+    def test_set_samm_version(self, mock_set_samm_version, file_path):
+        resolver = LocalFileResolver()
+
+        resolver.set_samm_version(file_path)
+
+        mock_set_samm_version.assert_called_once_with(pathlib.Path(file_path))

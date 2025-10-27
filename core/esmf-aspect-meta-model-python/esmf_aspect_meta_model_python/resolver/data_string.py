@@ -12,8 +12,7 @@
 from pathlib import Path
 from typing import Union
 
-from rdflib import Graph
-
+from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
 from esmf_aspect_meta_model_python.resolver.base import ResolverInterface
 
 
@@ -33,7 +32,7 @@ class DataStringResolver(ResolverInterface):
         Returns:
             RDFGraph: An object representing the RDF graph constructed from the input data.
         """
-        self.graph = Graph()
+        self.graph = AdaptiveGraph(samm_version=self.samm_version)
         self.graph.parse(data=str(data_string) if isinstance(data_string, Path) else data_string)
 
         return self.graph

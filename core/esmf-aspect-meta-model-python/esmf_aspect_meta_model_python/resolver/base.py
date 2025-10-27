@@ -13,8 +13,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
-from rdflib import Graph
-
+from esmf_aspect_meta_model_python import utils
+from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
 from esmf_aspect_meta_model_python.samm_meta_model import SammUnitsGraph
 
 
@@ -33,7 +33,7 @@ class ResolverInterface(ABC):
     """
 
     def __init__(self):
-        self.graph = Graph()
+        self.graph = AdaptiveGraph()
         self.samm_graph = None
         self.samm_version = ""
 
@@ -70,46 +70,22 @@ class ResolverInterface(ABC):
         elif samm_version > SammUnitsGraph.SAMM_VERSION:
             raise ValueError(f"{samm_version} is not supported SAMM version.")
 
-    def _get_samm_version_from_graph(self) -> str:
+    def set_samm_version(self, steam_input: Union[str, Path]) -> None:
         """
-        Extracts the SAMM version from the RDF graph.
+        Sets the SAMM version by extracting it from the specified file.
 
-        This method searches through the RDF graph namespaces to find a prefix that indicate the SAMM version.
+        This method uses the AdaptiveGraph class to extract the SAMM version from the given file.
+        There is also a validation against known SAMM versions to ensure the version is supported and recognized.
 
-        Returns:
-            str: The SAMM version as a string extracted from the graph. Returns an empty string if no version
-                 can be conclusively identified.
-        """
-        version = ""
-
-        for prefix, namespace in self.graph.namespace_manager.namespaces():
-            if prefix == "samm":
-                urn_parts = namespace.split(":")
-                version = urn_parts[-1].replace("#", "")
-
-        return version
-
-    def get_samm_version(self) -> str:
-        """
-        Retrieves and validates the specified SAMM version from the provided Aspect model graph.
-
-        This method attempts to extract the version information of the SAMM from a graph. There is also a validation
-        against known SAMM versions to ensure the version is supported and recognized.
-
-
-        Returns:
-            str: The validated version of SAMM if it is recognized and supported. If the version is not valid,
-                 an appropriate message or value indicating non-recognition is returned.
+        Args:
+            steam_input (Union[str, Path]): The path to the file from which the SAMM version is to be extracted.
 
         Raises:
-            ValueError: If the extracted version is not supported or if it is not found in the Graph.
-
+            ValueError: If the extracted version is not supported or if it is not found in the file.
         """
-        version = self._get_samm_version_from_graph()
+        version = utils.get_samm_version_from_input(steam_input)
         self._validate_samm_version(version)
         self.samm_version = version
 
-        return version
-
-    def prepare_aspect_model(self, graph: Graph):
+    def prepare_aspect_model(self, graph: AdaptiveGraph):
         """Resolve all additional graph elements if needed."""

@@ -9,22 +9,18 @@
 #
 #   SPDX-License-Identifier: MPL-2.0
 
+from os import getcwd
 from pathlib import Path
-
-import pytest
 
 from esmf_aspect_meta_model_python import SAMMGraph
 
-ASPECT_MODELS_DIR = (
-    Path.cwd() / "tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general_with_references"
+RESOURCE_PATH = getcwd() / Path(
+    "tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general_with_references/2.1.0"
 )
-
-ASPECT_MODELS_V2_1_0 = ASPECT_MODELS_DIR / "2.1.0"
-ASPECT_MODELS_V2_2_0 = ASPECT_MODELS_DIR / "2.2.0"
 
 
 def test_resolve_elements_references():
-    file_path = ASPECT_MODELS_V2_1_0 / "AspectWithReferences.ttl"
+    file_path = RESOURCE_PATH / "AspectWithReferences.ttl"
     samm_graph = SAMMGraph()
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
@@ -55,18 +51,3 @@ def test_resolve_elements_references():
     assert property_4.get_preferred_name("en") == "Test List"
     assert property_4.get_description("en") == "This is a test list."
     assert property_4.see == ["http://example.com/"]
-
-
-def test_aspect_with_diff_meta_model_submodel_version():
-    file_path = ASPECT_MODELS_V2_2_0 / "AspectWithEarlierSubmodelVersionReferences.ttl"
-    samm_graph = SAMMGraph()
-    samm_graph.parse(file_path)
-
-    with pytest.raises(
-        ValueError,
-        match=(
-            "SAMM version mismatch. Found '2.1.0', but expected '2.2.0'. "
-            "Ensure all RDF files use a single, consistent SAMM version"
-        ),
-    ):
-        samm_graph.load_aspect_model()
