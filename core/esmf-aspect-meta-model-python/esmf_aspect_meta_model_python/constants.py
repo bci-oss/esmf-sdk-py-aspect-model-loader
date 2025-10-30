@@ -1,4 +1,4 @@
-#  Copyright (c) 2023 Robert Bosch Manufacturing Solutions GmbH
+#  Copyright (c) 2025 Robert Bosch Manufacturing Solutions GmbH
 #
 #  See the AUTHORS file(s) distributed with this work for additional
 #  information regarding authorship.
@@ -11,4 +11,4 @@
 
 
 SAMM_VERSION = "2.2.0"
-JAVA_CLI_VERSION = "2.10.2"
+JAVA_CLI_VERSION = "2.11.1"
