@@ -16,11 +16,13 @@ from typing import Dict, Union
 
 import rdflib
 
+import esmf_aspect_meta_model_python.constants as const
+
 
 class SammUnitsGraph:
     """Model units graph."""
 
-    SAMM_VERSION = "2.2.0"
+    SAMM_VERSION = const.SAMM_VERSION
     UNIT_FILE_PATH = f"samm_aspect_meta_model/samm/unit/{SAMM_VERSION}/units.ttl"
     QUERY_TEMPLATE = Template("SELECT ?key ?value WHERE {$unit ?key ?value .}")
 

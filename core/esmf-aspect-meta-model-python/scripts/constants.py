@@ -12,17 +12,7 @@
 from os.path import join
 from string import Template
 
-
-SAMM_VERSION = "2.2.0"
-JAVA_CLI_VERSION = "2.10.2"
-
-
-class SAMMCliConstants:
-    BASE_PATH = Template("https://github.com/eclipse-esmf/esmf-sdk/releases/download/v$version_number/$file_name")
-    JAVA_CLI_VERSION = JAVA_CLI_VERSION
-    LINUX_FILE_NAME = Template("samm-cli-$version_number-linux-x86_64.tar.gz")
-    SAMM_VERSION = SAMM_VERSION
-    WIN_FILE_NAME = Template("samm-cli-$version_number-windows-x86_64.zip")
+from esmf_aspect_meta_model_python.constants import JAVA_CLI_VERSION, SAMM_VERSION
 
 
 class TestModelConstants:
