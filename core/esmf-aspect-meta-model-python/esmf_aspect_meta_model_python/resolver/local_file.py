@@ -51,7 +51,7 @@ class LocalFileResolver(ResolverInterface):
         self.file_path = file_path
 
         self.validate_file(self.file_path)
-        self.graph = AdaptiveGraph(samm_version=self.samm_version)
+        self.graph = AdaptiveGraph()
         self.graph.parse(source=self.file_path)
 
         return self.graph
@@ -169,9 +169,3 @@ class LocalFileResolver(ResolverInterface):
         folder_dependencies: Dict[str, List[str]] = {}
 
         self._get_dependency_files(file_dependencies, folder_dependencies, self.file_path)
-
-    def set_samm_version(self, file_path: Union[str, Path]) -> None:
-        """
-        Converts the file path to a Path object and calls the parent class method to set the SAMM version.
-        """
-        return super().set_samm_version(Path(file_path))

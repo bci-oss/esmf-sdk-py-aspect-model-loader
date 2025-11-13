@@ -15,7 +15,7 @@ from pathlib import Path
 from esmf_aspect_meta_model_python import SAMMGraph
 
 RESOURCE_PATH = getcwd() / Path(
-    "tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general_with_references/2.1.0"
+    "tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general_with_references/2.2.0"
 )
 
 

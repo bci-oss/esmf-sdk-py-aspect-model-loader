@@ -21,7 +21,7 @@ import pytest
 
 from esmf_aspect_meta_model_python.samm_cli.base import SammCli
 
-RESOURCE_PATH = Path(__file__).parent / "resources" / "org.eclipse.esmf.test.general" / "2.1.0"
+RESOURCE_PATH = Path(__file__).parent / "resources" / "org.eclipse.esmf.test.general" / "2.2.0"
 
 
 @pytest.fixture(scope="module")

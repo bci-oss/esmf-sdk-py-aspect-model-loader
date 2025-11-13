@@ -13,7 +13,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
-from esmf_aspect_meta_model_python import utils
+import esmf_aspect_meta_model_python.constants as const
+
 from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
 from esmf_aspect_meta_model_python.samm_meta_model import SammUnitsGraph
 
@@ -35,7 +36,7 @@ class ResolverInterface(ABC):
     def __init__(self):
         self.graph = AdaptiveGraph()
         self.samm_graph = None
-        self.samm_version = ""
+        self.samm_version = const.SAMM_VERSION
 
     @abstractmethod
     def read(self, input_data: Union[str, Path]):
@@ -69,23 +70,6 @@ class ResolverInterface(ABC):
             raise ValueError("SAMM version not found in the Graph.")
         elif samm_version > SammUnitsGraph.SAMM_VERSION:
             raise ValueError(f"{samm_version} is not supported SAMM version.")
-
-    def set_samm_version(self, steam_input: Union[str, Path]) -> None:
-        """
-        Sets the SAMM version by extracting it from the specified file.
-
-        This method uses the AdaptiveGraph class to extract the SAMM version from the given file.
-        There is also a validation against known SAMM versions to ensure the version is supported and recognized.
-
-        Args:
-            steam_input (Union[str, Path]): The path to the file from which the SAMM version is to be extracted.
-
-        Raises:
-            ValueError: If the extracted version is not supported or if it is not found in the file.
-        """
-        version = utils.get_samm_version_from_input(steam_input)
-        self._validate_samm_version(version)
-        self.samm_version = version
 
     def prepare_aspect_model(self, graph: AdaptiveGraph):
         """Resolve all additional graph elements if needed."""

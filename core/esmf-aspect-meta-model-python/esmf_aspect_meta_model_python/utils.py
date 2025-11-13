@@ -37,13 +37,3 @@ def has_version_mismatch_in_graph(graph: Graph, samm_version: str) -> bool:
 def has_version_mismatch_from_input(input_source: Union[str, pathlib.Path], samm_version: str) -> bool:
     """Detect SAMM version mismatch from an input source (path or Turtle string)."""
     return has_version_mismatch_in_graph(_parse_graph_from_input(input_source), samm_version=samm_version)
-
-
-def get_samm_version_from_input(input_source: Union[str, pathlib.Path]) -> str:
-    """Retrieve the SAMM version from the provided input source (path or Turtle string)."""
-    version = ""
-
-    for v in get_samm_versions_from_graph(_parse_graph_from_input(input_source)):
-        version = v
-
-    return version

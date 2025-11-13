@@ -32,7 +32,7 @@ class DataStringResolver(ResolverInterface):
         Returns:
             RDFGraph: An object representing the RDF graph constructed from the input data.
         """
-        self.graph = AdaptiveGraph(samm_version=self.samm_version)
+        self.graph = AdaptiveGraph()
         self.graph.parse(data=str(data_string) if isinstance(data_string, Path) else data_string)
 
         return self.graph

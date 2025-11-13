@@ -1,6 +1,4 @@
 """Local file resolver test suit."""
-import pathlib
-
 from unittest import mock
 
 import pytest
@@ -47,7 +45,7 @@ class TestLocalFileResolver:
 
         assert result == rdf_graph_mock
         validate_file_mock.assert_called_once_with("file_path")
-        graph_mock.assert_called_once_with(samm_version="1.0.0")
+        graph_mock.assert_called_once_with()
         rdf_graph_mock.parse.assert_called_once_with(source="file_path")
 
     def test_parse_namespace_no_data(self):
@@ -170,12 +168,3 @@ class TestLocalFileResolver:
 
         assert result is None
         get_dependency_files_mock.assert_called_once_with({}, {}, "aspect_file_path")
-
-    @mock.patch("esmf_aspect_meta_model_python.resolver.base.ResolverInterface.set_samm_version")
-    @pytest.mark.parametrize("file_path", ["/valid/path/to/file.ttl", pathlib.Path("/valid/path/to/file.ttl")])
-    def test_set_samm_version(self, mock_set_samm_version, file_path):
-        resolver = LocalFileResolver()
-
-        resolver.set_samm_version(file_path)
-
-        mock_set_samm_version.assert_called_once_with(pathlib.Path(file_path))

@@ -8,11 +8,12 @@
 #  file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 #   SPDX-License-Identifier: MPL-2.0
-
 from pathlib import Path
 from typing import List, Optional, Union
 
 from rdflib import RDF, Graph, Node
+
+import esmf_aspect_meta_model_python.constants as const
 
 from esmf_aspect_meta_model_python import utils
 from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
@@ -35,7 +36,7 @@ class SAMMGraph:
         self.samm_graph = Graph()
         self._cache = DefaultElementCache()
 
-        self.samm_version = None
+        self.samm_version = const.SAMM_VERSION
         self.aspect = None
         self.model_elements = None
         self._samm = None
@@ -43,11 +44,7 @@ class SAMMGraph:
 
     def __str__(self) -> str:
         """Object string representation."""
-        str_data = "SAMMGraph"
-        if self.samm_version:
-            str_data += f" v{self.samm_version}"
-
-        return str_data
+        return f"SAMMGraph v{self.samm_version}"
 
     def __repr__(self) -> str:
         """Object representation."""
@@ -59,7 +56,7 @@ class SAMMGraph:
         """Read the RDF graph from the given input data.
 
         This method initializes the `InputHandler` with the provided input data and type,
-        retrieves the reader, sets the SAMM version, and reads the RDF graph into `self.rdf_graph`.
+        retrieves the reader, and reads the RDF graph into `self.rdf_graph`.
 
         Args:
             input_data (Union[str, Path]): The input data to read the RDF graph from. This can be a file path or a str.
@@ -69,24 +66,7 @@ class SAMMGraph:
             None
         """
         self._reader = InputHandler(input_data, input_type).get_reader()
-        self._reader.set_samm_version(input_data)
         self.rdf_graph = self._reader.read(input_data)
-
-    def _get_samm_version(self):
-        """Retrieve and set the SAMM version from the RDF graph.
-
-        This method extracts the SAMM version from the RDF graph and assigns it to the `samm_version` attribute.
-        If the SAMM version is not found, it raises a ValueError.
-
-        Raises:
-            ValueError: If the SAMM version is not found in the RDF graph.
-        """
-        self.samm_version = self._reader.samm_version
-
-        if not self.samm_version:
-            raise ValueError(
-                f"SAMM version number was not found in graph. Could not process RDF graph {self.rdf_graph}."
-            )
 
     def _get_samm(self):
         """Initialize the SAMM object with the current SAMM version."""
@@ -115,7 +95,6 @@ class SAMMGraph:
             SAMMGraph: The instance of the SAMMGraph with the parsed data.
         """
         self._get_rdf_graph(input_data, input_type)
-        self._get_samm_version()
         self._get_samm()
         self._get_samm_graph()
 

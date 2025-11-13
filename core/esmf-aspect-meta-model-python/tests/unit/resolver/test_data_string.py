@@ -23,4 +23,4 @@ class TestDataStringResolver:
 
         assert result == graph_mock
         graph_mock.parse.assert_called_once_with(data=str(data_string))
-        rdf_graph_mock.assert_called_once_with(samm_version="1.0.0")
+        rdf_graph_mock.assert_called_once_with()

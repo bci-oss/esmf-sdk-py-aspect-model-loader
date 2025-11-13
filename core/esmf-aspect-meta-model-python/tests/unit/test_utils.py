@@ -88,27 +88,3 @@ def test_has_version_mismatch_from_input(mismatch_mock, parse_mock, has_mismatch
     assert result is has_mismatch
     parse_mock.assert_called_once_with(input_source)
     mismatch_mock.assert_called_once_with(parse_mock.return_value, samm_version="1.0.0")
-
-
-@mock.patch("esmf_aspect_meta_model_python.utils._parse_graph_from_input", autospec=True)
-@mock.patch("esmf_aspect_meta_model_python.utils.get_samm_versions_from_graph", autospec=True)
-class TestGetSammVersionFromInput:
-    def test_with_version(self, versions_mock, parse_mock):
-        input_source = "input source"
-        versions_mock.return_value = iter(["2.0.0", "2.0.0", "1.0.0", "3.0.0"])
-
-        result = utils.get_samm_version_from_input(input_source)
-
-        assert result == "3.0.0"  # always last version returned if multiple
-        parse_mock.assert_called_once_with(input_source)
-        versions_mock.assert_called_once_with(parse_mock.return_value)
-
-    def test_without_version(self, versions_mock, parse_mock):
-        input_source = "input source"
-        versions_mock.return_value = iter([])
-
-        result = utils.get_samm_version_from_input(input_source)
-
-        assert result == ""
-        parse_mock.assert_called_once_with(input_source)
-        versions_mock.assert_called_once_with(parse_mock.return_value)

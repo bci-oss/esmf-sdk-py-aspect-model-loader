@@ -14,7 +14,7 @@ from pathlib import Path
 
 from esmf_aspect_meta_model_python import BaseImpl, SAMMGraph
 
-RESOURCE_PATH = getcwd() / Path("tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general/2.1.0")
+RESOURCE_PATH = getcwd() / Path("tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general/2.2.0")
 
 
 def test_get_access_path():
@@ -63,7 +63,7 @@ def test_find_properties_by_name() -> None:
     assert len(result) == 1
     assert isinstance(result[0], BaseImpl)
     assert result[0].name == "testPropertyOne"
-    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyOne"
+    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyOne"
     assert len(result[0].preferred_names) == 0
     assert len(result[0].see) == 0
     assert len(result[0].descriptions) == 0
@@ -73,7 +73,7 @@ def test_find_properties_by_name() -> None:
     assert len(result) == 1
     assert isinstance(result[0], BaseImpl)
     assert result[0].name == "testPropertyTwo"
-    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo"
+    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo"
     assert len(result[0].preferred_names) == 0
     assert len(result[0].see) == 0
     assert len(result[0].descriptions) == 0
@@ -94,7 +94,7 @@ def test_find_property_chaticaristic_by_name() -> None:
     assert len(result) == 1
     assert isinstance(result[0], BaseImpl)
     assert result[0].name == "BooleanTestCharacteristic"
-    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#BooleanTestCharacteristic"
+    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#BooleanTestCharacteristic"
     assert len(result[0].preferred_names) == 0
     assert len(result[0].see) == 0
     assert len(result[0].descriptions) == 0
@@ -105,21 +105,21 @@ def test_find_properties_by_urn() -> None:
     samm_graph = SAMMGraph()
     samm_graph.parse(file_path)
     _ = samm_graph.load_aspect_model()
-    element = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyOne")
+    element = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyOne")
 
     assert element is not None
     assert isinstance(element, BaseImpl)
     assert element.name == "testPropertyOne"
-    assert element.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyOne"
+    assert element.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyOne"
     assert len(element.preferred_names) == 0
     assert len(element.see) == 0
     assert len(element.descriptions) == 0
 
-    element = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo")
+    element = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo")
     assert element is not None
     assert isinstance(element, BaseImpl)
     assert element.name == "testPropertyTwo"
-    assert element.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo"
+    assert element.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo"
     assert len(element.preferred_names) == 0
     assert len(element.see) == 0
     assert len(element.descriptions) == 0
@@ -134,12 +134,12 @@ def test_find_property_characteristic_by_urn() -> None:
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
     _ = aspect.properties[0].characteristic
-    element = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.1.0#BooleanTestCharacteristic")
+    element = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.2.0#BooleanTestCharacteristic")
 
     assert element is not None
     assert isinstance(element, BaseImpl)
     assert element.name == "BooleanTestCharacteristic"
-    assert element.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#BooleanTestCharacteristic"
+    assert element.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#BooleanTestCharacteristic"
     assert len(element.preferred_names) == 0
     assert len(element.see) == 0
     assert len(element.descriptions) == 0

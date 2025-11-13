@@ -4,6 +4,8 @@ from unittest import mock
 
 import pytest
 
+import esmf_aspect_meta_model_python.constants as const
+
 from esmf_aspect_meta_model_python.loader.samm_graph import SAMMGraph
 
 
@@ -22,7 +24,7 @@ class TestSAMMGraph:
         assert result.rdf_graph == "rdf_graph"
         assert result.samm_graph == "samm_graph"
         assert result._cache == "cache"
-        assert result.samm_version is None
+        assert result.samm_version == const.SAMM_VERSION
         assert result.aspect is None
         assert result.model_elements is None
         assert result._samm is None
@@ -59,29 +61,7 @@ class TestSAMMGraph:
         assert samm_graph.rdf_graph == "rdf_graph"
         input_handler_mock.assert_called_once_with(input_data, input_type)
         input_handler_mock.return_value.get_reader.assert_called_once_with()
-        input_handler_mock.return_value.get_reader.return_value.set_samm_version.assert_called_once_with(input_data)
         reader_mock.read.assert_called_once_with(input_data)
-
-    def test_get_samm_version(self):
-        samm_version = "1.2.3"
-        samm_graph = SAMMGraph()
-        samm_graph._reader = mock.MagicMock(samm_version=samm_version)
-
-        samm_graph._get_samm_version()
-
-        assert samm_graph.samm_version == samm_version
-
-    def test_get_samm_version_raises_value_error(self):
-        samm_graph = SAMMGraph()
-        samm_graph._reader = mock.MagicMock(samm_version=None)
-        samm_graph.rdf_graph = "rdf_graph"
-
-        with pytest.raises(ValueError) as error:
-            samm_graph._get_samm_version()
-
-        assert str(error.value) == (
-            "SAMM version number was not found in graph. Could not process RDF graph rdf_graph."
-        )
 
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMM")
     def test_get_samm(self, samm_mock):
@@ -105,15 +85,13 @@ class TestSAMMGraph:
 
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph._get_samm_graph")
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph._get_samm")
-    @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph._get_samm_version")
     @mock.patch("esmf_aspect_meta_model_python.loader.samm_graph.SAMMGraph._get_rdf_graph")
-    def test_parse(self, get_rdf_graph_mock, get_samm_version_mock, get_samm_mock, get_samm_graph_mock):
+    def test_parse(self, get_rdf_graph_mock, get_samm_mock, get_samm_graph_mock):
         samm_graph = SAMMGraph()
         result = samm_graph.parse("input_data", "input_type")
 
         assert result == samm_graph
         get_rdf_graph_mock.assert_called_once_with("input_data", "input_type")
-        get_samm_version_mock.assert_called_once()
         get_samm_mock.assert_called_once()
         get_samm_graph_mock.assert_called_once()
 
