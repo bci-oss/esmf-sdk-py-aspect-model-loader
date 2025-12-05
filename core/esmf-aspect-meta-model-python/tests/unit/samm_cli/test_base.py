@@ -1,4 +1,15 @@
-"""SAMM client functions test suite."""
+#  Copyright (c) 2023 Robert Bosch Manufacturing Solutions GmbH
+#
+#  See the AUTHORS file(s) distributed with this work for additional
+#  information regarding authorship.
+#
+#  This Source Code Form is subject to the terms of the Mozilla Public
+#  License, v. 2.0. If a copy of the MPL was not distributed with this
+#  file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+#   SPDX-License-Identifier: MPL-2.0
+"""SammCli unit tests"""
+import subprocess
 
 from unittest import mock
 
@@ -53,7 +64,7 @@ def test_get_client_path(_, path_mock, join_mock):
 
     assert result == "cli_path"
     path_mock.resolve.assert_called_once()
-    join_mock.assert_called_once_with("parent", "samm-cli", "samm.exe")
+    join_mock.assert_has_calls([mock.call("parent", "samm-cli"), mock.call("cli_path", "samm")])
 
 
 @mock.patch(f"{BASE_PATH}.download_samm_cli")
@@ -260,7 +271,7 @@ class TestCallFunction:
 
         result = samm_cli._call_function("function name", "path_to_ttl_model", *args, **kwargs)
 
-        assert result is None
+        assert result is subprocess_mock.run.return_value.stdout
         subprocess_mock.run.assert_called_once_with(
             [
                 "samm",
@@ -292,7 +303,7 @@ class TestCallFunction:
             **kwargs,
         )
 
-        assert result is None
+        assert result is subprocess_mock.run.return_value.stdout
         subprocess_mock.run.assert_called_once_with(
             [
                 "samm",
@@ -307,89 +318,202 @@ class TestCallFunction:
             ]
         )
 
+    @mock.patch(f"{BASE_PATH}.subprocess")
+    class TestCapture:
+        def test_true(self, subprocess_mock, samm_cli):
+            subprocess_mock.run.return_value.stdout = stdout = "output data"
+            args = ["flag_1", "flag_2"]
+            kwargs = {"a": "value_1", "arg_2": "value_2"}
+
+            result = samm_cli._call_function(
+                "function name",
+                "path_to_ttl_model",
+                *args,
+                capture=True,
+                **kwargs,
+            )
+
+            assert result is stdout
+            subprocess_mock.run.assert_called_once_with(
+                [
+                    "samm",
+                    "aspect",
+                    "path_to_ttl_model",
+                    "function",
+                    "name",
+                    "-flag_1",
+                    "-flag_2",
+                    "-a=value_1",
+                    "--arg-2=value_2",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
+        def test_false(self, subprocess_mock, samm_cli):
+            args = ["flag_1", "flag_2"]
+            kwargs = {"a": "value_1", "arg_2": "value_2"}
+
+            result = samm_cli._call_function(
+                "function name",
+                "path_to_ttl_model",
+                *args,
+                capture=False,
+                **kwargs,
+            )
+
+            assert result is subprocess_mock.run.return_value.stdout
+            subprocess_mock.run.assert_called_once_with(
+                [
+                    "samm",
+                    "aspect",
+                    "path_to_ttl_model",
+                    "function",
+                    "name",
+                    "-flag_1",
+                    "-flag_2",
+                    "-a=value_1",
+                    "--arg-2=value_2",
+                ]
+            )
+
+        def test_error(self, subprocess_mock, samm_cli):
+            subprocess_mock.run.side_effect = subprocess.CalledProcessError(
+                returncode=1,
+                cmd=["samm", "aspect", "path_to_ttl_model", "function", "name"],
+                output="Validation error",
+                stderr="Error occurred",
+            )
+            args = ["flag_1", "flag_2"]
+            kwargs = {"a": "value_1", "arg_2": "value_2"}
+
+            with pytest.raises(subprocess.CalledProcessError) as exc_info:
+                samm_cli._call_function(
+                    "function name",
+                    "path_to_ttl_model",
+                    *args,
+                    capture=True,
+                    **kwargs,
+                )
+
+            assert exc_info.value.returncode == 1
+            assert exc_info.value.stdout == "Validation error"
+            assert exc_info.value.stderr == "Error occurred"
+            subprocess_mock.run.assert_called_once_with(
+                [
+                    "samm",
+                    "aspect",
+                    "path_to_ttl_model",
+                    "function",
+                    "name",
+                    "-flag_1",
+                    "-flag_2",
+                    "-a=value_1",
+                    "--arg-2=value_2",
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+
 
 @mock.patch(f"{CLASS_PATH}._call_function")
 class TestSammCliFunctions:
     def test_validate(self, call_function_mock, samm_cli):
         result = samm_cli.validate("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.VALIDATE, "path_to_ttl_model", "flag", arg_key="value"
+            SAMMCLICommands.VALIDATE, "path_to_ttl_model", "flag", capture=False, arg_key="value"
         )
 
     def test_prettyprint(self, call_function_mock, samm_cli):
         result = samm_cli.prettyprint("path_to_ttl_model", "w", output="output.ttl")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.PRETTYPRINT,
             "path_to_ttl_model",
             "w",
+            capture=False,
             output="output.ttl",
         )
 
     def test_usage(self, call_function_mock, samm_cli):
         result = samm_cli.usage("urn:samm:org.eclipse.example:1.0.0#MyElement", models_root="/path/to/models")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            "usage", "urn:samm:org.eclipse.example:1.0.0#MyElement", models_root="/path/to/models"
+            "usage", "urn:samm:org.eclipse.example:1.0.0#MyElement", capture=False, models_root="/path/to/models"
         )
 
     def test_to_openapi(self, call_function_mock, samm_cli):
         result = samm_cli.to_openapi("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.TO_OPENAPI, "path_to_ttl_model", "flag", arg_key="value"
+            SAMMCLICommands.TO_OPENAPI, "path_to_ttl_model", "flag", capture=False, arg_key="value"
         )
 
     def test_to_schema(self, call_function_mock, samm_cli):
         result = samm_cli.to_schema("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.TO_SCHEMA, "path_to_ttl_model", "flag", arg_key="value"
+            SAMMCLICommands.TO_SCHEMA, "path_to_ttl_model", "flag", capture=False, arg_key="value"
         )
 
     def test_to_json(self, call_function_mock, samm_cli):
         result = samm_cli.to_json("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.TO_JSON, "path_to_ttl_model", "flag", arg_key="value"
+            SAMMCLICommands.TO_JSON, "path_to_ttl_model", "flag", capture=False, arg_key="value"
         )
 
     def test_to_html(self, call_function_mock, samm_cli):
         result = samm_cli.to_html("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.TO_HTML, "path_to_ttl_model", "flag", arg_key="value"
+            SAMMCLICommands.TO_HTML, "path_to_ttl_model", "flag", capture=False, arg_key="value"
         )
 
     def test_to_png(self, call_function_mock, samm_cli):
         result = samm_cli.to_png("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
-        call_function_mock.assert_called_once_with(SAMMCLICommands.TO_PNG, "path_to_ttl_model", "flag", arg_key="value")
+        assert result is call_function_mock.return_value
+        call_function_mock.assert_called_once_with(
+            SAMMCLICommands.TO_PNG,
+            "path_to_ttl_model",
+            "flag",
+            capture=False,
+            arg_key="value",
+        )
 
     def test_to_svg(self, call_function_mock, samm_cli):
         result = samm_cli.to_svg("path_to_ttl_model", "flag", arg_key="value")
 
-        assert result is None
-        call_function_mock.assert_called_once_with(SAMMCLICommands.TO_SVG, "path_to_ttl_model", "flag", arg_key="value")
+        assert result is call_function_mock.return_value
+        call_function_mock.assert_called_once_with(
+            SAMMCLICommands.TO_SVG,
+            "path_to_ttl_model",
+            "flag",
+            capture=False,
+            arg_key="value",
+        )
 
     def test_to_java(self, call_function_mock, samm_cli):
         result = samm_cli.to_java("path_to_ttl_model", "nj", "s", package_name="org.example", output_directory="./out")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.TO_JAVA,
             "path_to_ttl_model",
             "nj",
             "s",
+            capture=False,
             package_name="org.example",
             output_directory="./out",
         )
@@ -399,12 +523,13 @@ class TestSammCliFunctions:
             "path_to_ttl_model", "sv", "sf", channel_address="topic/name", application_id="app-id"
         )
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.TO_ASYNCAPI,
             "path_to_ttl_model",
             "sv",
             "sf",
+            capture=False,
             channel_address="topic/name",
             application_id="app-id",
         )
@@ -412,9 +537,9 @@ class TestSammCliFunctions:
     def test_to_jsonld(self, call_function_mock, samm_cli):
         result = samm_cli.to_jsonld("path_to_ttl_model", output="model.jsonld")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.TO_JSONLD, "path_to_ttl_model", output="model.jsonld"
+            SAMMCLICommands.TO_JSONLD, "path_to_ttl_model", capture=False, output="model.jsonld"
         )
 
     def test_to_sql(self, call_function_mock, samm_cli):
@@ -427,10 +552,11 @@ class TestSammCliFunctions:
             custom_column="col1 STRING",
         )
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.TO_SQL,
             "path_to_ttl_model",
+            capture=False,
             output="schema.sql",
             dialect="databricks",
             mapping_strategy="denormalized",
@@ -442,10 +568,11 @@ class TestSammCliFunctions:
     # def test_to_aas(self, call_function_mock, samm_cli):
     #     result = samm_cli.to_aas("path_to_ttl_model", output="aas.aasx", format="aasx", aspect_data="data.json")
     #
-    #     assert result is None
+    #     assert result is call_function_mock.return_value
     #     call_function_mock.assert_called_once_with(
     #         SAMMCLICommands.AAS_TO_ASPECT,
     #         "path_to_ttl_model",
+    #         capture=False,
     #         output="aas.aasx",
     #         format="aasx",
     #         aspect_data="data.json",
@@ -468,8 +595,8 @@ class TestSammCliFunctions:
         """Test edit_move command with different configurations."""
         result = samm_cli.edit_move("path_to_ttl_model", element, namespace, *flags)
 
-        assert result is None
-        call_function_mock.assert_called_once_with(expected_function_name, "path_to_ttl_model", *flags)
+        assert result is call_function_mock.return_value
+        call_function_mock.assert_called_once_with(expected_function_name, "path_to_ttl_model", *flags, capture=False)
 
     @pytest.mark.parametrize(
         "model_input,version_type,flags,kwargs",
@@ -484,10 +611,9 @@ class TestSammCliFunctions:
         """Test edit_newversion command with different version types."""
         result = samm_cli.edit_newversion(model_input, version_type, *flags, **kwargs)
 
-        assert result is None
-
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.EDIT_NEWVERSION, model_input, *[version_type, *flags], **kwargs
+            SAMMCLICommands.EDIT_NEWVERSION, model_input, *[version_type, *flags], capture=False, **kwargs
         )
 
     def test_edit_newversion_none(self, call_function_mock, samm_cli):
@@ -498,12 +624,12 @@ class TestSammCliFunctions:
             "force",
         )
 
-        assert result is None
-
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.EDIT_NEWVERSION,
             "path_to_ttl_model",
             "force",
+            capture=False,
         )
 
     def test_aas_to_aspect(self, call_function_mock, samm_cli):
@@ -511,10 +637,11 @@ class TestSammCliFunctions:
             "AssetAdminShell.aasx", output_directory="./output", submodel_template=["1", "2"]
         )
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.AAS_TO_ASPECT,
             "AssetAdminShell.aasx",
+            capture=False,
             command_type=SAMMCLICommandTypes.AAS,
             output_directory="./output",
             submodel_template=["1", "2"],
@@ -523,21 +650,22 @@ class TestSammCliFunctions:
     def test_aas_list(self, call_function_mock, samm_cli):
         result = samm_cli.aas_list("AssetAdminShell.aasx")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
-            SAMMCLICommands.AAS_LIST, "AssetAdminShell.aasx", command_type=SAMMCLICommandTypes.AAS
+            SAMMCLICommands.AAS_LIST, "AssetAdminShell.aasx", capture=False, command_type=SAMMCLICommandTypes.AAS
         )
 
     def test_package_import(self, call_function_mock, samm_cli):
         result = samm_cli.package_import("MyPackage.zip", "dry-run", "details", "force", models_root="c:\\models")
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.PACKAGE_IMPORT,
             "MyPackage.zip",
             "dry-run",
             "details",
             "force",
+            capture=False,
             command_type=SAMMCLICommandTypes.PACKAGE,
             models_root="c:\\models",
         )
@@ -547,10 +675,11 @@ class TestSammCliFunctions:
             "urn:samm:org.eclipse.example.myns:1.0.0", output="package.zip", models_root="/path/to/models"
         )
 
-        assert result is None
+        assert result is call_function_mock.return_value
         call_function_mock.assert_called_once_with(
             SAMMCLICommands.PACKAGE_EXPORT,
             "urn:samm:org.eclipse.example.myns:1.0.0",
+            capture=False,
             command_type="package",
             output="package.zip",
             models_root="/path/to/models",

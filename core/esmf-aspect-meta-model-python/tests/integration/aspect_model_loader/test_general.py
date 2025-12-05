@@ -14,7 +14,7 @@ from pathlib import Path
 
 from esmf_aspect_meta_model_python import BaseImpl, ComplexType, Either, SAMMGraph
 
-RESOURCE_PATH = getcwd() / Path("tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general/2.1.0")
+RESOURCE_PATH = getcwd() / Path("tests/integration/aspect_model_loader/resources/org.eclipse.esmf.test.general/2.2.0")
 
 
 def test_aspect_with_multiple_attributes():
@@ -39,14 +39,14 @@ def test_aspect():
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
 
-    assert aspect.meta_model_version == "2.1.0"
+    assert aspect.meta_model_version == "2.2.0"
     assert aspect.name == "TestAspect"
     assert len(aspect.preferred_names) == 2
     assert aspect.get_preferred_name("en") == "Test Aspect"
     assert aspect.get_preferred_name("de") == "Test Aspekt"
     assert len(aspect.descriptions) == 1
     assert aspect.get_description("en") == "This is a test description"
-    assert aspect.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#TestAspect"
+    assert aspect.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#TestAspect"
     assert len(aspect.properties) == 2
     assert aspect.is_collection_aspect is False
 
@@ -63,7 +63,7 @@ def test_aspect():
         "Describes a Property which contains plain text. This is intended exclusively for human readable strings, "
         "not for identifiers, measurement values, etc."
     )
-    assert characteristic.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo"
+    assert characteristic.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo"
 
     data_type = characteristic.data_type
     assert data_type.is_scalar is True
@@ -77,9 +77,9 @@ def test_aspect_with_operation():
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
 
-    assert aspect.meta_model_version == "2.1.0"
+    assert aspect.meta_model_version == "2.2.0"
     assert aspect.name == "AspectWithOperation"
-    assert aspect.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#AspectWithOperation"
+    assert aspect.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#AspectWithOperation"
 
     properties = aspect.properties
     assert len(properties) == 0
@@ -138,9 +138,9 @@ def test_aspect_with_operation_no_output():
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
 
-    assert aspect.meta_model_version == "2.1.0"
+    assert aspect.meta_model_version == "2.2.0"
     assert aspect.name == "AspectWithOperationNoOutput"
-    assert aspect.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#AspectWithOperationNoOutput"
+    assert aspect.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#AspectWithOperationNoOutput"
 
     properties = aspect.properties
     assert len(properties) == 0
@@ -288,7 +288,7 @@ def test_find_properties_by_name() -> None:
     assert len(result) == 1
     assert isinstance(result[0], BaseImpl)
     assert result[0].name == "testPropertyOne"
-    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyOne"
+    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyOne"
     assert len(result[0].preferred_names) == 0
     assert len(result[0].see) == 0
     assert len(result[0].descriptions) == 0
@@ -298,7 +298,7 @@ def test_find_properties_by_name() -> None:
     assert len(result) == 1
     assert isinstance(result[0], BaseImpl)
     assert result[0].name == "testPropertyTwo"
-    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo"
+    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo"
     assert len(result[0].preferred_names) == 0
     assert len(result[0].see) == 0
     assert len(result[0].descriptions) == 0
@@ -319,7 +319,7 @@ def test_find_property_characteristic_by_name() -> None:
     assert len(result) == 1
     assert isinstance(result[0], BaseImpl)
     assert result[0].name == "BooleanTestCharacteristic"
-    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#BooleanTestCharacteristic"
+    assert result[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#BooleanTestCharacteristic"
     assert len(result[0].preferred_names) == 0
     assert len(result[0].see) == 0
     assert len(result[0].descriptions) == 0
@@ -331,20 +331,20 @@ def test_find_properties_by_urn() -> None:
     samm_graph.parse(file_path)
     _ = samm_graph.load_aspect_model()
 
-    result = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyOne")
+    result = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyOne")
     assert result is not None
     assert isinstance(result, BaseImpl)
     assert result.name == "testPropertyOne"
-    assert result.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyOne"
+    assert result.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyOne"
     assert len(result.preferred_names) == 0
     assert len(result.see) == 0
     assert len(result.descriptions) == 0
 
-    result = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo")
+    result = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo")
     assert result is not None
     assert isinstance(result, BaseImpl)
     assert result.name == "testPropertyTwo"
-    assert result.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#testPropertyTwo"
+    assert result.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#testPropertyTwo"
     assert len(result.preferred_names) == 0
     assert len(result.see) == 0
     assert len(result.descriptions) == 0
@@ -359,12 +359,12 @@ def test_find_property_characteristic_by_urn() -> None:
     samm_graph.parse(file_path)
     aspect = samm_graph.load_aspect_model()
     _ = aspect.properties[0].characteristic
-    result = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.1.0#BooleanTestCharacteristic")
+    result = samm_graph.find_by_urn("urn:samm:org.eclipse.esmf.test.general:2.2.0#BooleanTestCharacteristic")
 
     assert result is not None
     assert isinstance(result, BaseImpl)
     assert result.name == "BooleanTestCharacteristic"
-    assert result.urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#BooleanTestCharacteristic"
+    assert result.urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#BooleanTestCharacteristic"
     assert len(result.preferred_names) == 0
     assert len(result.see) == 0
     assert len(result.descriptions) == 0
@@ -386,8 +386,8 @@ def test_loading_aspect_with_either():
 
     left = either_characteristic.left
     assert left.name == "Text"
-    assert left.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#TestEither"
+    assert left.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#TestEither"
 
     right = either_characteristic.right
     assert right.name == "Boolean"
-    assert right.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.1.0#TestEither"
+    assert right.parent_elements[0].urn == "urn:samm:org.eclipse.esmf.test.general:2.2.0#TestEither"

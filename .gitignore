@@ -69,5 +69,5 @@ dmypy.json
 
 # SAMM
 core/esmf-aspect-meta-model-python/esmf_aspect_meta_model_python/samm_aspect_meta_model/samm/
-/core/esmf-aspect-meta-model-python/samm-cli/
+core/esmf-aspect-meta-model-python/esmf_aspect_meta_model_python/samm_cli/samm-cli/
 /core/esmf-aspect-meta-model-python/tests/integration/aspect_model_loader/java_models/resources/

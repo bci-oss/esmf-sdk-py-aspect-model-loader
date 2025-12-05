@@ -8,6 +8,7 @@
 #  file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
 #   SPDX-License-Identifier: MPL-2.0
+import platform
 import subprocess
 
 from os.path import exists, join
@@ -33,9 +34,14 @@ class SammCli:
     def _get_client_path():
         """Get path to the SAMM CLI executable file."""
         base_path = Path(__file__).resolve()
-        cli_path = join(base_path.parents[0], "samm-cli", "samm.exe")
+        cli_dir = join(base_path.parents[0], "samm-cli")
 
-        return cli_path
+        if platform.system() == "Windows":
+            cli_file = "samm.exe"
+        else:
+            cli_file = "samm"  # Unix-like systems
+
+        return join(cli_dir, cli_file)
 
     @staticmethod
     def _format_argument(key: str, value: Any) -> str:
@@ -74,7 +80,7 @@ class SammCli:
         if not exists(self._samm):
             download_samm_cli()
 
-    def _call_function(self, function_name, path_to_model, *args, command_type=None, **kwargs):
+    def _call_function(self, function_name, path_to_model, *args, command_type=None, capture=False, **kwargs):
         """Run a SAMM CLI function as a subprocess.
 
         Args:
@@ -82,14 +88,20 @@ class SammCli:
             path_to_model: Path to the model file
             *args: Positional arguments (flags)
             command_type: Command type (must be one of SAMMCLICommandTypes values)
+            capture: If True, run with capture_output=True, text=True, check=True and return stdout
             **kwargs: Keyword arguments
 
         Raises:
             ValueError: If command_type is not one of the allowed types
+            [subprocess.CalledProcessError]: If capture is True and the subprocess call fails
+
+        Returns:
+            The stdout of the subprocess if capture is True, otherwise None
         """
         if command_type is None:
             command_type = SAMMCLICommandTypes.ASPECT
 
+        call_kwargs = {}
         call_args = [self._samm, command_type, path_to_model] + function_name.split()
 
         if args:
@@ -98,18 +110,23 @@ class SammCli:
         if kwargs:
             call_args.extend(self._process_kwargs(kwargs))
 
-        subprocess.run(call_args)
+        if capture:
+            call_kwargs.update(capture_output=True, text=True, check=True)
 
-    def validate(self, path_to_model, *args, **kwargs):
+        result = subprocess.run(call_args, **call_kwargs)
+
+        return result.stdout
+
+    def validate(self, path_to_model, *args, capture=False, **kwargs):
         """Validate Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
         possible arguments:
             custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.VALIDATE, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.VALIDATE, path_to_model, *args, capture=capture, **kwargs)
 
-    def prettyprint(self, path_to_model, *args, **kwargs):
+    def prettyprint(self, path_to_model, *args, capture=False, **kwargs):
         """Pretty-print Aspect Model.
 
         Formats the Aspect Model file with proper indentation and structure.
@@ -120,9 +137,9 @@ class SammCli:
             - overwrite, w: overwrite the input file (use as flag without value)
             - custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.PRETTYPRINT, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.PRETTYPRINT, path_to_model, *args, capture=capture, **kwargs)
 
-    def usage(self, path_to_model, *args, **kwargs):
+    def usage(self, path_to_model, *args, capture=False, **kwargs):
         """Shows where model elements are used in an Aspect.
 
         param path_to_model: local path to the aspect model file (*.ttl) or an element URN
@@ -137,9 +154,9 @@ class SammCli:
             # Show usage for an element URN with models root
             samm_cli.usage("urn:samm:org.eclipse.example:1.0.0#MyElement", models_root="/path/to/models")
         """
-        self._call_function(SAMMCLICommands.USAGE, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.USAGE, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_openapi(self, path_to_model, *args, **kwargs):
+    def to_openapi(self, path_to_model, *args, capture=False, **kwargs):
         """Generate OpenAPI specification for an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -162,9 +179,9 @@ class SammCli:
             - language, l: the language from the model for which an OpenAPI specification should be generated (default: en)
             custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_OPENAPI, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_OPENAPI, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_schema(self, path_to_model, *args, **kwargs):
+    def to_schema(self, path_to_model, *args, capture=False, **kwargs):
         """Generate JSON schema for an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -173,9 +190,9 @@ class SammCli:
             - language, -l: the language from the model for which a JSON schema should be generated (default: en)
             - custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_SCHEMA, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_SCHEMA, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_json(self, path_to_model, *args, **kwargs):
+    def to_json(self, path_to_model, *args, capture=False, **kwargs):
         """Generate example JSON payload data for an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -183,9 +200,9 @@ class SammCli:
             - output, -o: output file path (default: stdout)
             - custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_JSON, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_JSON, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_html(self, path_to_model, *args, **kwargs):
+    def to_html(self, path_to_model, *args, capture=False, **kwargs):
         """Generate HTML documentation for an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -195,9 +212,9 @@ class SammCli:
             - language, -l: the language from the model for which the HTML should be generated (default: en)
             - custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_HTML, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_HTML, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_png(self, path_to_model, *args, **kwargs):
+    def to_png(self, path_to_model, *args, capture=False, **kwargs):
         """Generate PNG diagram for Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -208,9 +225,9 @@ class SammCli:
             - language, -l: the language from the model for which the diagram should be generated (default: en)
             - custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_PNG, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_PNG, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_svg(self, path_to_model, *args, **kwargs):
+    def to_svg(self, path_to_model, *args, capture=False, **kwargs):
         """Generate SVG diagram for Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -219,9 +236,9 @@ class SammCli:
             - language, -l: the language from the model for which the diagram should be generated (default: en)
             - custom-resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_SVG, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_SVG, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_java(self, path_to_model, *args, **kwargs):
+    def to_java(self, path_to_model, *args, capture=False, **kwargs):
         """Generate Java classes from an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -242,9 +259,9 @@ class SammCli:
             - name_prefix, namePrefix: name prefix for generated Aspect, Entity Java classes
             - name_postfix, namePostfix: name postfix for generated Aspect, Entity Java classes
         """
-        self._call_function(SAMMCLICommands.TO_JAVA, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_JAVA, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_asyncapi(self, path_to_model, *args, **kwargs):
+    def to_asyncapi(self, path_to_model, *args, capture=False, **kwargs):
         """Generate AsyncAPI specification for an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -259,9 +276,9 @@ class SammCli:
             - separate_files, sf: create separate files for each schema (use as flag without value)
             - custom_resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_ASYNCAPI, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_ASYNCAPI, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_jsonld(self, path_to_model, *args, **kwargs):
+    def to_jsonld(self, path_to_model, *args, capture=False, **kwargs):
         """Generate JSON-LD representation of an Aspect Model.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -269,9 +286,9 @@ class SammCli:
             - output, o: output file path (default: stdout)
             - custom_resolver: use an external resolver for the resolution of the model elements
         """
-        self._call_function(SAMMCLICommands.TO_JSONLD, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_JSONLD, path_to_model, *args, capture=capture, **kwargs)
 
-    def to_sql(self, path_to_model, *args, **kwargs):
+    def to_sql(self, path_to_model, *args, capture=False, **kwargs):
         """Generate SQL script that sets up a table for data for this Aspect.
 
         param path_to_model: local path to the aspect model file (*.ttl)
@@ -314,9 +331,10 @@ class SammCli:
             # or call the CLI directly. Current implementation supports single custom column.
             samm_cli.to_sql("AspectModel.ttl", custom_column=("column1 STRING", "column2 INT"))
         """
-        self._call_function(SAMMCLICommands.TO_SQL, path_to_model, *args, **kwargs)
+        return self._call_function(SAMMCLICommands.TO_SQL, path_to_model, *args, capture=capture, **kwargs)
 
-    # def to_aas(self, path_to_model, *args, **kwargs):  # FIXME: https://github.com/eclipse-esmf/esmf-sdk/issues/802
+    # FIXME: https://github.com/eclipse-esmf/esmf-sdk/issues/802
+    # def to_aas(self, path_to_model, *args, capture=False, **kwargs):
     #     """Generate an Asset Administration Shell (AAS) submodel template from an Aspect Model.
     #
     #     param path_to_model: local path to the aspect model file (*.ttl)
@@ -326,9 +344,9 @@ class SammCli:
     #         - aspect_data, a: path to a JSON file containing aspect data corresponding to the Aspect Model
     #         - custom_resolver: use an external resolver for the resolution of the model elements
     #     """
-    #     self._call_function(SAMMCLICommands.AAS_TO_ASPECT, path_to_model, *args, **kwargs)
+    #     return self._call_function(SAMMCLICommands.AAS_TO_ASPECT, path_to_model, *args, capture=capture, **kwargs)
 
-    def edit_move(self, path_to_model, element, namespace=None, *args, **kwargs):
+    def edit_move(self, path_to_model, element, namespace=None, *args, capture=False, **kwargs):
         """Move a model element definition from its current place to another existing or
             new file in the same or another namespace.
 
@@ -364,9 +382,9 @@ class SammCli:
         if namespace:
             function_name += f" {namespace}"
 
-        self._call_function(function_name, path_to_model, *args, **kwargs)
+        return self._call_function(function_name, path_to_model, *args, capture=capture, **kwargs)
 
-    def edit_newversion(self, path_to_model, version_type=None, *args, **kwargs):
+    def edit_newversion(self, path_to_model, version_type=None, *args, capture=False, **kwargs):
         """Create a new version of an existing file or a complete namespace.
 
         param path_to_model: local path to the aspect model file (*.ttl) or a namespace URN
@@ -405,10 +423,11 @@ class SammCli:
         args_list = list(args)
         if version_type and version_type in ("major", "minor", "micro"):
             args_list.insert(0, version_type)
+        return self._call_function(
+            SAMMCLICommands.EDIT_NEWVERSION, path_to_model, *args_list, capture=capture, **kwargs
+        )
 
-        self._call_function(SAMMCLICommands.EDIT_NEWVERSION, path_to_model, *args_list, **kwargs)
-
-    def aas_to_aspect(self, aas_file, *args, **kwargs):
+    def aas_to_aspect(self, aas_file, *args, capture=False, **kwargs):
         """Translate Asset Administration Shell (AAS) Submodel Templates to Aspect Models.
 
         param aas_file: path to the AAS file (*.aasx, *.xml, *.json)
@@ -434,11 +453,16 @@ class SammCli:
             # or using short form
             samm_cli.aas_to_aspect("AssetAdminShell.aasx", s=["1", "2"])
         """
-        self._call_function(
-            SAMMCLICommands.AAS_TO_ASPECT, aas_file, *args, command_type=SAMMCLICommandTypes.AAS, **kwargs
+        return self._call_function(
+            SAMMCLICommands.AAS_TO_ASPECT,
+            aas_file,
+            *args,
+            command_type=SAMMCLICommandTypes.AAS,
+            capture=capture,
+            **kwargs,
         )
 
-    def aas_list(self, aas_file, *args, **kwargs):
+    def aas_list(self, aas_file, *args, capture=False, **kwargs):
         """Retrieve a list of submodel templates contained within the provided Asset Administration Shell (AAS) file.
 
         param aas_file: path to the AAS file (*.aasx, *.xml, *.json)
@@ -447,9 +471,16 @@ class SammCli:
             # List all submodel templates in an AAS file
             samm_cli.aas_list("AssetAdminShell.aasx")
         """
-        self._call_function(SAMMCLICommands.AAS_LIST, aas_file, *args, command_type=SAMMCLICommandTypes.AAS, **kwargs)
+        return self._call_function(
+            SAMMCLICommands.AAS_LIST,
+            aas_file,
+            *args,
+            command_type=SAMMCLICommandTypes.AAS,
+            capture=capture,
+            **kwargs,
+        )
 
-    def package_import(self, namespace_package, *args, **kwargs):
+    def package_import(self, namespace_package, *args, capture=False, **kwargs):
         """Imports a Namespace Package (file or URL) into a given models' directory.
 
         param namespace_package: path to the namespace package file (.zip) or URL
@@ -474,11 +505,16 @@ class SammCli:
             # Force import
             samm_cli.package_import("MyPackage.zip", "force", models_root="c:\\models")
         """
-        self._call_function(
-            SAMMCLICommands.PACKAGE_IMPORT, namespace_package, *args, command_type=SAMMCLICommandTypes.PACKAGE, **kwargs
+        return self._call_function(
+            SAMMCLICommands.PACKAGE_IMPORT,
+            namespace_package,
+            *args,
+            command_type=SAMMCLICommandTypes.PACKAGE,
+            capture=capture,
+            **kwargs,
         )
 
-    def package_export(self, model_or_urn, *args, **kwargs):
+    def package_export(self, model_or_urn, *args, capture=False, **kwargs):
         """Exports an Aspect Model with its dependencies or a complete namespace to a Namespace Package (.zip).
 
         param model_or_urn: path to aspect model file (*.ttl) or namespace URN
@@ -503,6 +539,11 @@ class SammCli:
             # Export to specific location
             samm_cli.package_export("AspectModel.ttl", output="c:\\exports\\my-package.zip")
         """
-        self._call_function(
-            SAMMCLICommands.PACKAGE_EXPORT, model_or_urn, *args, command_type=SAMMCLICommandTypes.PACKAGE, **kwargs
+        return self._call_function(
+            SAMMCLICommands.PACKAGE_EXPORT,
+            model_or_urn,
+            *args,
+            command_type=SAMMCLICommandTypes.PACKAGE,
+            capture=capture,
+            **kwargs,
         )

@@ -13,15 +13,13 @@ from os.path import exists, join
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-from rdflib import Graph
-
+from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
+from esmf_aspect_meta_model_python.constants import SAMM_NAMESPACE_PREFIX, SAMM_ORG_IDENTIFIER
 from esmf_aspect_meta_model_python.resolver.base import ResolverInterface
 
 
 class LocalFileResolver(ResolverInterface):
     """Local storage aspect model file resolver."""
-
-    samm_namespace_prefix = "samm"
 
     def __init__(self):
         super().__init__()
@@ -37,7 +35,7 @@ class LocalFileResolver(ResolverInterface):
         if not exists(file_path):
             raise FileNotFoundError(f"Could not find a file {file_path}")
 
-    def read(self, file_path: Union[str, Path]) -> Graph:
+    def read(self, file_path: Union[str, Path]) -> AdaptiveGraph:
         """
         Read an RDF graph stored in the local file.
 
@@ -53,8 +51,8 @@ class LocalFileResolver(ResolverInterface):
         self.file_path = file_path
 
         self.validate_file(self.file_path)
-        self.graph = Graph()
-        self.graph.parse(self.file_path)
+        self.graph = AdaptiveGraph()
+        self.graph.parse(source=self.file_path)
 
         return self.graph
 
@@ -73,8 +71,8 @@ class LocalFileResolver(ResolverInterface):
         if len(namespace_info) == 4:
             urn, namespace_id, namespace_specific_str, version = namespace_info
 
-            if urn == "urn" and namespace_id == "samm":
-                if namespace_specific_str == "org.eclipse.esmf.samm":
+            if urn == "urn" and namespace_id == SAMM_NAMESPACE_PREFIX:
+                if namespace_specific_str == SAMM_ORG_IDENTIFIER:
                     namespace_specific_str = None
                     version = None
                 else:
@@ -106,7 +104,7 @@ class LocalFileResolver(ResolverInterface):
         :return: list of dependency folders
         """
         if file_path != self.file_path:
-            self.graph.parse(file_path, format="turtle")
+            self.graph.parse(source=file_path, format="turtle")
 
         dependency_folders = self._get_dirs_for_advanced_loading(file_path)
 
@@ -161,7 +159,7 @@ class LocalFileResolver(ResolverInterface):
 
         return file_dependencies
 
-    def prepare_aspect_model(self, graph: Graph):
+    def prepare_aspect_model(self, graph: AdaptiveGraph):
         """Parse namespaces from the Aspect model.
 
         :param graph: RDF Graph
