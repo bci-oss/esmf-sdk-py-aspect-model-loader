@@ -138,7 +138,6 @@ introducing too many transitive dependencies downstream.
 | astral-sh/uv          | Apache Software License (Apache 2.0) / MIT License (MIT) | Dependency Management  |
 | rdflib                | [LICENSE AGREEMENT FOR RDFLIB](https://github.com/RDFLib/rdflib/blob/master/LICENSE)     | Dependency             |
 | requests              | Apache Software License (Apache 2.0) | Dependency             |
-| zipfile37             | Python Software Foundation License   | Dependency             |
 | psf/black             | MIT License (MIT)                    | Development dependency |
 | nedbat/coverage       | Apache Software License (Apache 2.0) | Development dependency |
 | isort                 | MIT License (MIT)                    | Development dependency |

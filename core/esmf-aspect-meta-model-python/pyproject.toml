@@ -22,7 +22,6 @@ classifiers = [
 # Pinned to exact versions (no ranges) to harden against supply-chain attacks.
 dependencies = [
     "requests==2.34.2",
-    "zipfile37==0.1.3",
     "rdflib==7.6.0",
 ]
 
