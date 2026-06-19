@@ -24,6 +24,10 @@ on:
       release_version:
         description: "Version number of the release"
         required: true
+      next_development_version:
+        description: "Next development version to set on main (e.g. 2.4.0). Leave empty to auto-increment the minor and append '.dev0'. Ignored for pre-releases."
+        required: false
+        default: ""
 
 concurrency: # Prevent concurrent releases from interfering with each other
   group: release-${{ github.workflow }}
@@ -31,6 +35,7 @@ concurrency: # Prevent concurrent releases from interfering with each other
 
 env:
   RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+  NEXT_DEVELOPMENT_VERSION: ${{ github.event.inputs.next_development_version }}
   PYTHON_VERSION: "3.10"
   WORKING_DIR: core/esmf-aspect-meta-model-python
   PYPI_PACKAGE_NAME: "esmf-aspect-model-loader"
@@ -474,3 +479,126 @@ jobs:
           echo "- 📦 [PyPI Package](https://pypi.org/project/${PYPI_PACKAGE_NAME}/${RELEASE_VERSION}/)" >> "${GITHUB_STEP_SUMMARY}"
           echo "- 🏷️ [GitHub Release](${GH_SERVER}/${GH_REPO}/releases/tag/v${RELEASE_VERSION})" >> "${GITHUB_STEP_SUMMARY}"
           echo "- 🌿 [Release Branch](${GH_SERVER}/${GH_REPO}/tree/${RELEASE_BRANCH_NAME})" >> "${GITHUB_STEP_SUMMARY}"
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Job 3: Bump main to the next development version
+  #
+  # The release itself happens on a dedicated release branch (X.Y.x); main is never
+  # touched by Job 2. Without this job, main would keep the just-released version and
+  # the next release run would fail the "Check version incrementing" check.
+  #
+  # This job opens a pull request (instead of pushing directly) so it works even when
+  # main is a protected branch. It is skipped for pre-releases.
+  # ──────────────────────────────────────────────────────────────────────────────
+  bump-next-development-version:
+    name: Bump next development version on main
+    needs: [ create_and_publish_release ]
+    runs-on: ubuntu-latest
+    # Only bump after a final release; pre-releases (e.g. 1.2.3-M1) must not advance main.
+    if: ${{ !contains(github.event.inputs.release_version, '-') }}
+
+    permissions:
+      contents: write       # create the bump branch
+      pull-requests: write  # open the bump PR
+
+    defaults:
+      run:
+        shell: bash -euo pipefail {0}
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: main
+          persist-credentials: true # Required for pushing the bump branch
+          fetch-depth: 0
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          version: "0.11.21"
+          enable-cache: false # Disable caching to avoid cache poisoning attacks
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Resolve the next development version. Use the explicit input when provided,
+      # otherwise auto-increment the minor of the released version and append '.dev0'
+      # (PEP 440 developmental release) to mark main as unreleased.
+      - name: Determine next development version
+        run: |
+          python -m pip install --quiet --upgrade --no-input --disable-pip-version-check packaging
+          next_version="$(python - << 'EOF'
+          import os
+          from packaging.version import Version
+
+          explicit = os.environ.get("NEXT_DEVELOPMENT_VERSION", "").strip()
+          if explicit:
+              # Validate but keep the user-provided string as-is.
+              Version(explicit)
+              print(explicit)
+          else:
+              release = Version(os.environ["RELEASE_VERSION"])
+              print(f"{release.major}.{release.minor + 1}.0.dev0")
+          EOF
+          )"
+          echo "NEXT_VERSION=${next_version}" >> "${GITHUB_ENV}"
+          echo "✅ Next development version: ${next_version}"
+
+      - name: Check next version is greater than current main version
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          current="$(uv version | awk '{print $2}')"
+          python - << EOF
+          from packaging.version import Version
+
+          nxt = Version("${NEXT_VERSION}")
+          cur = Version("${current}")
+          if nxt <= cur:
+              raise SystemExit(
+                  f"::error::Next development version {nxt} must be greater than current main version {cur}"
+              )
+          print(f"✅ Version bump OK: {cur} -> {nxt}")
+          EOF
+
+      - name: Bump version on a dedicated branch
+        run: |
+          bump_branch="chore/bump-dev-version-after-${RELEASE_VERSION}"
+          echo "BUMP_BRANCH=${bump_branch}" >> "${GITHUB_ENV}"
+
+          git checkout -b "${bump_branch}"
+
+          (cd "${{ env.WORKING_DIR }}" && uv version "${NEXT_VERSION}")
+
+          git add "${{ env.WORKING_DIR }}/pyproject.toml"
+          if git diff --cached --quiet; then
+            echo "::error::No changes to commit - main may already be at ${NEXT_VERSION}"
+            exit 1
+          fi
+
+          git commit \
+            -m "Bump development version to ${NEXT_VERSION}" \
+            -m "Automated post-release bump after ${RELEASE_VERSION} by GitHub Actions"
+
+          git push -u origin "${bump_branch}"
+          echo "✅ Bump branch pushed: ${bump_branch}"
+
+      - name: Open pull request against main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "${BUMP_BRANCH}" \
+            --title "chore: bump development version to ${NEXT_VERSION}" \
+            --body "$(printf 'Automated post-release bump after releasing \x60%s\x60.\n\nThis updates the version on \x60main\x60 to \x60%s\x60 so the next release passes the version-increment check.\n\nWorkflow run: %s' "${RELEASE_VERSION}" "${NEXT_VERSION}" "${WORKFLOW_URL}")"
+          echo "✅ Pull request opened to bump main to ${NEXT_VERSION}"
+
