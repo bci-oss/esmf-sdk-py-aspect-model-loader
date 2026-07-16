@@ -54,6 +54,7 @@ dev = [
     "types-requests==2.33.0.20260518",
     "tox==4.54.0",
     "tox-uv==1.35.2",
+    "polars>=1.42.1",
 ]
 
 # Pin the uv version that may operate on this project so the lockfile cannot
