@@ -105,6 +105,30 @@ https://www.eclipse.org/projects/handbook/#resources-commit
 
 ## Commit Messages
 
+We adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for commit messages. This helps with automated versioning and generating clean changelogs.
+
+A conventional commit message should follow this structure:
+
+```text
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Useful types include:
+- **feat**: A new feature (corresponds to a `MINOR` version bump)
+- **fix**: A bug fix (corresponds to a `PATCH` version bump)
+- **docs**: Documentation only changes
+- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.)
+- **refactor**: A code change that neither fixes a bug nor adds a feature
+- **perf**: A code change that improves performance
+- **test**: Adding missing tests or correcting existing tests
+- **build**: Changes that affect the build system or external dependencies
+- **ci**: Changes to our CI configuration files and scripts
+- **chore**: Other changes that don't modify src or test files
+
 Separate the subject from the body with a blank line because the subject line is shown in the Git
 history and should summarize the commit body. Use the body to explain what and why with less focus
 on the details of the how. This [blog post](https://chris.beams.io/posts/git-commit/#seven-rules)

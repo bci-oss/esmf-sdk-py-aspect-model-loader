@@ -406,6 +406,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: v${{ env.RELEASE_VERSION }}
           includeInvalidCommits: true  # Include all commits
+          excludeTypes: build,docs,style
         continue-on-error: true  # Don't fail the workflow
 
       # Build the release body from the changelog; fall back to a link to the
