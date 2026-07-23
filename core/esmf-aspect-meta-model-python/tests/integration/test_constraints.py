@@ -15,7 +15,7 @@ import pytest
 
 from esmf_aspect_meta_model_python import SAMMGraph
 
-RESOURCE_PATH = Path("tests_invalid/resources/org.eclipse.esmf.samm.test/1.0.0")
+RESOURCE_PATH = Path("tests/integration/resources/org.eclipse.esmf.samm.test/1.0.0")
 
 
 def test_trait_missing_base_characteristic():
