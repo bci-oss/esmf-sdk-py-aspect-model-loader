@@ -326,7 +326,7 @@ jobs:
           fi
 
           git commit \
-            -m "Release version ${RELEASE_VERSION}" \
+            -m "release: version ${RELEASE_VERSION}" \
             -m "Automated release by GitHub Actions" \
             -m "Workflow run: ${WORKFLOW_URL}"
 
@@ -570,7 +570,7 @@ jobs:
           fi
 
           git commit \
-            -m "Bump development version to ${NEXT_VERSION}" \
+            -m "release: bump development version to ${NEXT_VERSION}" \
             -m "Automated post-release bump after ${RELEASE_VERSION} by GitHub Actions"
 
           git push -u origin "${bump_branch}"
