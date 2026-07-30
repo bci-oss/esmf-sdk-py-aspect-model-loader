@@ -105,29 +105,50 @@ https://www.eclipse.org/projects/handbook/#resources-commit
 
 ## Commit Messages
 
-We adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification for commit messages. This helps with automated versioning and generating clean changelogs.
+We adhere to [Scoped Commits](https://scopedcommits.com/) for commit messages. The scope - the
+subsystem, area or module a change touches - is the most valuable piece of information when scanning
+the Git history, so it comes first.
 
-A conventional commit message should follow this structure:
+A commit message should follow this structure:
 
 ```text
-<type>[optional scope]: <description>
+<scope>: <description>
 
 [optional body]
 
-[optional footer(s)]
+[optional trailer(s)]
 ```
 
-Useful types include:
-- **feat**: A new feature (corresponds to a `MINOR` version bump)
-- **fix**: A bug fix (corresponds to a `PATCH` version bump)
-- **docs**: Documentation only changes
-- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.)
-- **refactor**: A code change that neither fixes a bug nor adds a feature
-- **perf**: A code change that improves performance
-- **test**: Adding missing tests or correcting existing tests
-- **build**: Changes that affect the build system or external dependencies
-- **ci**: Changes to our CI configuration files and scripts
-- **chore**: Other changes that don't modify src or test files
+- **`<scope>`**: the subsystem, area or module that the commit touches, e.g. `loader`, `resolver`,
+  `samm-cli`, `vocabulary`, `tests`, `ci`, `docs`.
+- **`<description>`**: a short, imperative summary of the change.
+- **body**: detailed information about what changed and why.
+- **trailers**: additional metadata, e.g. `Closes: #123`.
+
+Examples:
+
+```text
+resolver: resolve namespaces from the local file system
+
+loader: support SAMM 2.2.0 characteristics
+
+ci: fix changelog creation
+```
+
+Some guidance on choosing scopes:
+
+- If a commit spans several areas, either use a more general scope that covers them all or list the
+  scopes separated by a comma (e.g. `loader,resolver: ...`).
+- If a commit touches the whole tree, use a scope such as `treewide`.
+- Reverts, merges and other special commits may be formatted however Git or GitHub produces them; a
+  scope is not required for them.
+- If none of the above fits, drop the scope and simply write a good description.
+
+The issue reference can be placed in parentheses after the scope (e.g. `loader (#123): ...`) or in a
+trailer (see [Pull Requests](#pull-requests) for the GitHub keywords that link a `PR` to an `Issue`).
+
+Note that the release changelog is not generated from the Git log - commit logs address
+contributors, changelogs address users. Please keep the two concerns separate.
 
 Separate the subject from the body with a blank line because the subject line is shown in the Git
 history and should summarize the commit body. Use the body to explain what and why with less focus
