@@ -1,7 +1,5 @@
 from unittest import mock
 
-import pytest
-
 from esmf_aspect_meta_model_python.adaptive_graph import AdaptiveGraph
 
 
