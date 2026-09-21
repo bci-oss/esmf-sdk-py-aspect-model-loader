@@ -9,7 +9,7 @@
 #
 #   SPDX-License-Identifier: MPL-2.0
 
-from os.path import exists, join, isabs
+from os.path import exists, isabs, join
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
