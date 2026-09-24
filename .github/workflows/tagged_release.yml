@@ -74,34 +74,7 @@ jobs:
           fi
 
           echo "✅ Version format validated: ${version}"
-
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          persist-credentials: false
-          fetch-depth: 0 # Needed for tag check
-
-      # Pin the exact commit SHA so later jobs check out the same code that was validated,
-      # preventing TOCTOU (time-of-check-time-of-use) races if new commits are pushed mid-run
-      - name: Capture validated commit SHA
-        id: get_sha
-        run: |
-          echo "sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
-          echo "✅ Validated commit SHA: ${GITHUB_SHA}"
-
-      - name: Check tag doesn't already exist
-        run: |
-          if git rev-parse "v${RELEASE_VERSION}" >/dev/null 2>&1; then
-            echo "::error::Tag v${RELEASE_VERSION} already exists"
-            exit 1
-          fi
-          echo "✅ Tag v${RELEASE_VERSION} is available"
-
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
+      
       - name: Validate version with PEP 440
         run: |
           python -m pip install --quiet --upgrade --no-input --disable-pip-version-check packaging
@@ -117,64 +90,11 @@ jobs:
               raise SystemExit(f"::error::Invalid PEP 440 version: {version}")
           EOF
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
-        with:
-          version: "0.11.21"
-          enable-cache: false # Disable caching to avoid cache poisoning attacks
-
-      - name: Build esmf-aspect
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          uv sync
-          uv run download-samm-release
-          uv build
-
-      - name: Run tests
-        working-directory: ${{ env.WORKING_DIR }}
-        run: uv run tox -e "py${PYTHON_VERSION//./}"
-
-      - name: Run code style checks
-        working-directory: ${{ env.WORKING_DIR }}
-        run: uv run tox -e pep8
-
-  # ──────────────────────────────────────────────────────────────────────────────
-  # Job 2: Bump versions, build, publish to PyPI, tag, and create GitHub release
-  # Runs only after all preconditions pass. Steps are ordered so that failures
-  # at any point leave the repository in a recoverable state.
-  # ──────────────────────────────────────────────────────────────────────────────
-  create_and_publish_release:
-    name: Create tagged release
-    needs: [ check-preconditions ]
-    runs-on: ubuntu-latest
-
-    permissions:
-      # Give the default GITHUB_TOKEN write permission to commit and push the
-      # added or changed files to the repository.
-      contents: write
-
-    defaults:
-      run:
-        shell: bash -euo pipefail {0}
-
-    steps:
-      - name: Checkout validated commit
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
-          ref: ${{ needs.check-preconditions.outputs.validated_sha }}
-          persist-credentials: true # Required for git push operations
-          fetch-depth: 0 # Fetch full git history and tags (needed for releases)
-
-      - name: Verify checkout matches validated SHA
-        env:
-          EXPECTED_SHA: ${{ needs.check-preconditions.outputs.validated_sha }}
-        run: |
-          current_sha=$(git rev-parse HEAD)
-          if [[ "${current_sha}" != "${EXPECTED_SHA}" ]]; then
-            echo "::error::SHA mismatch: expected ${EXPECTED_SHA}, got ${current_sha}"
-            exit 1
-          fi
-          echo "✅ Checkout verified: ${current_sha}"
+          persist-credentials: false
+          fetch-depth: 0 # Needed for tag check
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -186,14 +106,7 @@ jobs:
         with:
           version: "0.11.21"
           enable-cache: false # Disable caching to avoid cache poisoning attacks
-
-      # Use the standard bot identity for automated commits so they are clearly
-      # distinguishable from human commits in git log
-      - name: Setup Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
+      
       # Derive the release branch name by replacing the PATCH segment with 'x'
       # e.g. 1.2.3 → 1.2.x, 2.0.0-M1 → 2.0.x
       - name: Determine release branch
@@ -261,7 +174,7 @@ jobs:
           echo ""
           echo "✅ On release branch: ${RELEASE_BRANCH_NAME}"
           echo "   Commit: ${VALIDATED_SHA:0:7} ($(git log -1 --format='%s' HEAD))"
-
+      
       # Version check moved AFTER branch checkout to compare against the correct branch's version
       - name: Get current version from release branch
         working-directory: ${{ env.WORKING_DIR }}
@@ -285,6 +198,85 @@ jobs:
 
           print(f"✅ Version increment OK: {current} -> {release}")
           EOF
+
+      - name: Build esmf-aspect
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          uv sync
+          uv run download-samm-release
+          uv build
+
+      - name: Run tests
+        working-directory: ${{ env.WORKING_DIR }}
+        run: uv run tox -e "py${PYTHON_VERSION//./}"
+
+      - name: Run code style checks
+        working-directory: ${{ env.WORKING_DIR }}
+        run: uv run tox -e pep8
+      
+      # Pin the exact commit SHA so later jobs check out the same code that was validated,
+      # preventing TOCTOU (time-of-check-time-of-use) races if new commits are pushed mid-run
+      - name: Capture validated commit SHA
+        id: get_sha
+        run: |
+          echo "sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "✅ Validated commit SHA: ${GITHUB_SHA}"
+
+  # ──────────────────────────────────────────────────────────────────────────────
+  # Job 2: Bump versions, build, publish to PyPI, tag, and create GitHub release
+  # Runs only after all preconditions pass. Steps are ordered so that failures
+  # at any point leave the repository in a recoverable state.
+  # ──────────────────────────────────────────────────────────────────────────────
+  create_and_publish_release:
+    name: Create tagged release
+    needs: [ check-preconditions ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    defaults:
+      run:
+        shell: bash -euo pipefail {0}
+
+    steps:
+      - name: Checkout validated commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ needs.check-preconditions.outputs.validated_sha }}
+          persist-credentials: true # Required for git push operations
+          fetch-depth: 0 # Fetch full git history and tags (needed for releases)
+
+      - name: Verify checkout matches validated SHA
+        env:
+          EXPECTED_SHA: ${{ needs.check-preconditions.outputs.validated_sha }}
+        run: |
+          current_sha=$(git rev-parse HEAD)
+          if [[ "${current_sha}" != "${EXPECTED_SHA}" ]]; then
+            echo "::error::SHA mismatch: expected ${EXPECTED_SHA}, got ${current_sha}"
+            exit 1
+          fi
+          echo "✅ Checkout verified: ${current_sha}"
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          version: "0.11.21"
+          enable-cache: false # Disable caching to avoid cache poisoning attacks
+
+      # Use the standard bot identity for automated commits so they are clearly
+      # distinguishable from human commits in git log
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Set antora version
         uses: mikefarah/yq@5a7e72a743649b1b3a47d1a1d8214f3453173c51 # v4.52.4
@@ -386,6 +378,14 @@ jobs:
         run: |
           git push
           echo "✅ Version commit pushed to ${RELEASE_BRANCH_NAME}"
+      
+      - name: Check tag doesn't already exist
+        run: |
+          if git rev-parse "v${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "::error::Tag v${RELEASE_VERSION} already exists"
+            exit 1
+          fi
+          echo "✅ Tag v${RELEASE_VERSION} is available"
 
       # Create tag only after successful PyPI publish and commit push
       - name: Create and push tag
@@ -490,115 +490,115 @@ jobs:
   # This job opens a pull request (instead of pushing directly) so it works even when
   # main is a protected branch. It is skipped for pre-releases.
   # ──────────────────────────────────────────────────────────────────────────────
-  bump-next-development-version:
-    name: Bump next development version on main
-    needs: [ create_and_publish_release ]
-    runs-on: ubuntu-latest
-    # Only bump after a final release; pre-releases (e.g. 1.2.3-M1) must not advance main.
-    if: ${{ !contains(github.event.inputs.release_version, '-') }}
+  # bump-next-development-version:
+  #   name: Bump next development version on main
+  #   needs: [ create_and_publish_release ]
+  #   runs-on: ubuntu-latest
+  #   # Only bump after a final release; pre-releases (e.g. 1.2.3-M1) must not advance main.
+  #   if: ${{ !contains(github.event.inputs.release_version, '-') }}
 
-    permissions:
-      contents: write       # create the bump branch
-      pull-requests: write  # open the bump PR
+  #   permissions:
+  #     contents: write       # create the bump branch
+  #     pull-requests: write  # open the bump PR
 
-    defaults:
-      run:
-        shell: bash -euo pipefail {0}
+  #   defaults:
+  #     run:
+  #       shell: bash -euo pipefail {0}
 
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          ref: main
-          persist-credentials: true # Required for pushing the bump branch
-          fetch-depth: 0
+  #   steps:
+  #     - name: Checkout main
+  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+  #       with:
+  #         ref: main
+  #         persist-credentials: true # Required for pushing the bump branch
+  #         fetch-depth: 0
 
-      - name: Set up Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
+  #     - name: Set up Python ${{ env.PYTHON_VERSION }}
+  #       uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+  #       with:
+  #         python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
-        with:
-          version: "0.11.21"
-          enable-cache: false # Disable caching to avoid cache poisoning attacks
+  #     - name: Install uv
+  #       uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+  #       with:
+  #         version: "0.11.21"
+  #         enable-cache: false # Disable caching to avoid cache poisoning attacks
 
-      - name: Setup Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+  #     - name: Setup Git
+  #       run: |
+  #         git config user.name "github-actions[bot]"
+  #         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      # Resolve the next development version. Use the explicit input when provided,
-      # otherwise auto-increment the minor of the released version and append '.dev0'
-      # (PEP 440 developmental release) to mark main as unreleased.
-      - name: Determine next development version
-        run: |
-          python -m pip install --quiet --upgrade --no-input --disable-pip-version-check packaging
-          next_version="$(python - << 'EOF'
-          import os
-          from packaging.version import Version
+  #     # Resolve the next development version. Use the explicit input when provided,
+  #     # otherwise auto-increment the minor of the released version and append '.dev0'
+  #     # (PEP 440 developmental release) to mark main as unreleased.
+  #     - name: Determine next development version
+  #       run: |
+  #         python -m pip install --quiet --upgrade --no-input --disable-pip-version-check packaging
+  #         next_version="$(python - << 'EOF'
+  #         import os
+  #         from packaging.version import Version
 
-          explicit = os.environ.get("NEXT_DEVELOPMENT_VERSION", "").strip()
-          if explicit:
-              # Validate but keep the user-provided string as-is.
-              Version(explicit)
-              print(explicit)
-          else:
-              release = Version(os.environ["RELEASE_VERSION"])
-              print(f"{release.major}.{release.minor + 1}.0.dev0")
-          EOF
-          )"
-          echo "NEXT_VERSION=${next_version}" >> "${GITHUB_ENV}"
-          echo "✅ Next development version: ${next_version}"
+  #         explicit = os.environ.get("NEXT_DEVELOPMENT_VERSION", "").strip()
+  #         if explicit:
+  #             # Validate but keep the user-provided string as-is.
+  #             Version(explicit)
+  #             print(explicit)
+  #         else:
+  #             release = Version(os.environ["RELEASE_VERSION"])
+  #             print(f"{release.major}.{release.minor + 1}.0.dev0")
+  #         EOF
+  #         )"
+  #         echo "NEXT_VERSION=${next_version}" >> "${GITHUB_ENV}"
+  #         echo "✅ Next development version: ${next_version}"
 
-      - name: Check next version is greater than current main version
-        working-directory: ${{ env.WORKING_DIR }}
-        run: |
-          current="$(uv version | awk '{print $2}')"
-          python - << EOF
-          from packaging.version import Version
+  #     - name: Check next version is greater than current main version
+  #       working-directory: ${{ env.WORKING_DIR }}
+  #       run: |
+  #         current="$(uv version | awk '{print $2}')"
+  #         python - << EOF
+  #         from packaging.version import Version
 
-          nxt = Version("${NEXT_VERSION}")
-          cur = Version("${current}")
-          if nxt <= cur:
-              raise SystemExit(
-                  f"::error::Next development version {nxt} must be greater than current main version {cur}"
-              )
-          print(f"✅ Version bump OK: {cur} -> {nxt}")
-          EOF
+  #         nxt = Version("${NEXT_VERSION}")
+  #         cur = Version("${current}")
+  #         if nxt <= cur:
+  #             raise SystemExit(
+  #                 f"::error::Next development version {nxt} must be greater than current main version {cur}"
+  #             )
+  #         print(f"✅ Version bump OK: {cur} -> {nxt}")
+  #         EOF
 
-      - name: Bump version on a dedicated branch
-        run: |
-          bump_branch="chore/bump-dev-version-after-${RELEASE_VERSION}"
-          echo "BUMP_BRANCH=${bump_branch}" >> "${GITHUB_ENV}"
+  #     - name: Bump version on a dedicated branch
+  #       run: |
+  #         bump_branch="chore/bump-dev-version-after-${RELEASE_VERSION}"
+  #         echo "BUMP_BRANCH=${bump_branch}" >> "${GITHUB_ENV}"
 
-          git checkout -b "${bump_branch}"
+  #         git checkout -b "${bump_branch}"
 
-          (cd "${{ env.WORKING_DIR }}" && uv version "${NEXT_VERSION}")
+  #         (cd "${{ env.WORKING_DIR }}" && uv version "${NEXT_VERSION}")
 
-          git add "${{ env.WORKING_DIR }}/pyproject.toml"
-          if git diff --cached --quiet; then
-            echo "::error::No changes to commit - main may already be at ${NEXT_VERSION}"
-            exit 1
-          fi
+  #         git add "${{ env.WORKING_DIR }}/pyproject.toml"
+  #         if git diff --cached --quiet; then
+  #           echo "::error::No changes to commit - main may already be at ${NEXT_VERSION}"
+  #           exit 1
+  #         fi
 
-          git commit \
-            -m "Bump development version to ${NEXT_VERSION}" \
-            -m "Automated post-release bump after ${RELEASE_VERSION} by GitHub Actions"
+  #         git commit \
+  #           -m "Bump development version to ${NEXT_VERSION}" \
+  #           -m "Automated post-release bump after ${RELEASE_VERSION} by GitHub Actions"
 
-          git push -u origin "${bump_branch}"
-          echo "✅ Bump branch pushed: ${bump_branch}"
+  #         git push -u origin "${bump_branch}"
+  #         echo "✅ Bump branch pushed: ${bump_branch}"
 
-      - name: Open pull request against main
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          gh pr create \
-            --base main \
-            --head "${BUMP_BRANCH}" \
-            --title "chore: bump development version to ${NEXT_VERSION}" \
-            --body "$(printf 'Automated post-release bump after releasing \x60%s\x60.\n\nThis updates the version on \x60main\x60 to \x60%s\x60 so the next release passes the version-increment check.\n\nWorkflow run: %s' "${RELEASE_VERSION}" "${NEXT_VERSION}" "${WORKFLOW_URL}")"
-          echo "✅ Pull request opened to bump main to ${NEXT_VERSION}"
+  #     - name: Open pull request against main
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  #       run: |
+  #         gh pr create \
+  #           --base main \
+  #           --head "${BUMP_BRANCH}" \
+  #           --title "chore: bump development version to ${NEXT_VERSION}" \
+  #           --body "$(printf 'Automated post-release bump after releasing \x60%s\x60.\n\nThis updates the version on \x60main\x60 to \x60%s\x60 so the next release passes the version-increment check.\n\nWorkflow run: %s' "${RELEASE_VERSION}" "${NEXT_VERSION}" "${WORKFLOW_URL}")"
+  #         echo "✅ Pull request opened to bump main to ${NEXT_VERSION}"
 
